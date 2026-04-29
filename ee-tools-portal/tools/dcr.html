@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DCR计算 - EE Tools</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/common.css">
+    <style>
+        body { background: var(--bg-primary); padding-top: 64px; }
+        
+        .tool-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+        
+        .tool-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .tool-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #3b82f6, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .tool-subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        @media (max-width: 900px) {
+            .main-grid { grid-template-columns: 1fr; }
+        }
+        
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+        }
+        
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-primary);
+        }
+        
+        .card-title svg {
+            width: 24px;
+            height: 24px;
+            color: var(--accent-primary);
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        .input-with-unit {
+            display: flex;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            transition: border-color var(--transition-fast);
+        }
+        
+        .input-with-unit:focus-within {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+        
+        input[type="number"] {
+            flex: 1;
+            padding: 12px 16px;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+        
+        input[type="number"]:focus {
+            outline: none;
+        }
+        
+        .unit-selector {
+            padding: 12px 16px;
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--accent-primary);
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .unit-hint {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+        
+        .material-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .material-btn {
+            padding: 10px;
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+        
+        .material-btn:hover {
+            border-color: var(--accent-primary);
+            color: var(--text-primary);
+        }
+        
+        .material-btn.active {
+            border-color: var(--accent-primary);
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--accent-primary);
+        }
+        
+        .calculate-btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            margin-top: 20px;
+        }
+        
+        .calculate-btn:hover {
+            filter: brightness(1.1);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .result-box {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            padding: 24px;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--accent-primary);
+        }
+        
+        .result-title {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .dcr-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+            text-align: center;
+            margin: 12px 0;
+        }
+        
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.9rem;
+        }
+        
+        .result-row:last-child { border-bottom: none; }
+        .result-row span:first-child { color: var(--text-secondary); }
+        .result-row span:last-child { color: var(--text-primary); font-weight: 500; }
+        
+        .param-list {
+            margin-top: 16px;
+            padding: 16px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+        }
+        
+        .param-list-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+        
+        .param-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px dashed var(--border-color);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        
+        .param-item:last-child { border-bottom: none; }
+        
+        .formula-section {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            margin-bottom: 40px;
+        }
+        
+        .formula {
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: var(--radius-md);
+            font-family: 'Courier New', monospace;
+            font-size: 1.2rem;
+            text-align: center;
+            color: var(--accent-primary);
+            margin: 16px 0;
+            border-left: 4px solid var(--accent-primary);
+        }
+        
+        .formula-desc {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.8;
+        }
+        
+        .formula-desc strong { color: var(--text-primary); }
+    </style>
+</head>
+<body>
+    <div id="nav-container"></div>
+    
+    <div class="tool-container">
+        <div class="tool-header">
+            <h1 class="tool-title">PCB传输线DCR计算器</h1>
+            <p class="tool-subtitle">计算印刷电路板(PCB)传输线的直流电阻(DCR)</p>
+        </div>
+        
+        <div class="main-grid">
+            <div class="card">
+                <h2 class="card-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M12 1v6m0 6v10M1 12h6m6 0h10"/>
+                    </svg>
+                    参数设置
+                </h2>
+                
+                <div class="input-group">
+                    <label for="length">传输线长度</label>
+                    <div class="input-with-unit">
+                        <input type="number" id="length" value="100" min="0" step="any">
+                        <span class="unit-selector">mm</span>
+                    </div>
+                    <p class="unit-hint">常用范围：10mm - 500mm</p>
+                </div>
+                
+                <div class="input-group">
+                    <label for="width">传输线宽度</label>
+                    <div class="input-with-unit">
+                        <input type="number" id="width" value="0.5" min="0" step="any">
+                        <span class="unit-selector">mm</span>
+                    </div>
+                    <p class="unit-hint">常用范围：0.1mm - 5mm</p>
+                </div>
+                
+                <div class="input-group">
+                    <label>导体材料</label>
+                    <div class="material-selector">
+                        <button class="material-btn active" data-material="copper" data-resistivity="1.68e-8">铜 (Cu)</button>
+                        <button class="material-btn" data-material="aluminum" data-resistivity="2.82e-8">铝 (Al)</button>
+                        <button class="material-btn" data-material="gold" data-resistivity="2.44e-8">金 (Au)</button>
+                    </div>
+                </div>
+                
+                <div class="input-group" id="copper-thickness-group">
+                    <label for="thickness">铜厚度</label>
+                    <div class="input-with-unit">
+                        <input type="number" id="thickness" value="1" min="0.5" max="10" step="0.5">
+                        <span class="unit-selector">oz</span>
+                    </div>
+                    <p class="unit-hint">1 oz = 35μm</p>
+                </div>
+                
+                <div class="input-group">
+                    <label for="temperature">环境温度</label>
+                    <div class="input-with-unit">
+                        <input type="number" id="temperature" value="20" min="-273" max="200" step="1">
+                        <span class="unit-selector">°C</span>
+                    </div>
+                    <p class="unit-hint">标准温度：20°C</p>
+                </div>
+                
+                <button class="calculate-btn" id="calculate-btn">
+                    <svg style="display:inline;width:20px;height:20px;vertical-align:middle;margin-right:8px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="4" y="2" width="16" height="20" rx="2"/>
+                        <line x1="8" y1="6" x2="16" y2="6"/>
+                        <line x1="8" y1="10" x2="16" y2="10"/>
+                        <line x1="8" y1="14" x2="12" y2="14"/>
+                    </svg>
+                    计算DCR
+                </button>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                    </svg>
+                    计算结果
+                </h2>
+                
+                <div class="result-box">
+                    <div class="result-title">直流电阻 (DCR)</div>
+                    <div class="dcr-value" id="dcr-value">0.000 Ω</div>
+                    
+                    <div class="result-row">
+                        <span>每毫米电阻:</span>
+                        <span id="resistance-per-mm">0.000 Ω/mm</span>
+                    </div>
+                    <div class="result-row">
+                        <span>电压降 (1A电流):</span>
+                        <span id="voltage-drop">0.000 V</span>
+                    </div>
+                    <div class="result-row">
+                        <span>功率损耗 (1A电流):</span>
+                        <span id="power-loss">0.000 W</span>
+                    </div>
+                </div>
+                
+                <div class="param-list">
+                    <div class="param-list-title">输入参数</div>
+                    <div class="param-item">长度: <span id="param-length">100 mm</span></div>
+                    <div class="param-item">宽度: <span id="param-width">0.5 mm</span></div>
+                    <div class="param-item">材料: <span id="param-material">铜 (Cu)</span></div>
+                    <div class="param-item">厚度: <span id="param-thickness">1 oz</span></div>
+                    <div class="param-item">电阻率: <span id="param-resistivity">1.68×10⁻⁸ Ω·m</span></div>
+                    <div class="param-item">温度: <span id="param-temperature">20 °C</span></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="formula-section">
+            <h2 class="card-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                </svg>
+                计算公式
+            </h2>
+            
+            <div class="formula">R = ρ × L / (W × T)</div>
+            
+            <div class="formula-desc">
+                <p><strong>R</strong> = 直流电阻 (Ω)</p>
+                <p><strong>ρ</strong> = 导体材料的电阻率 (Ω·m)</p>
+                <p><strong>L</strong> = 传输线长度 (m)</p>
+                <p><strong>W</strong> = 传输线宽度 (m)</p>
+                <p><strong>T</strong> = 传输线厚度 (m)</p>
+                <p style="margin-top:12px;color:var(--text-muted)">注意：所有长度单位需要转换为米(m)进行计算。</p>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="footer">
+        <div class="container">
+            <p>© 2026 EE Tools | 用于PCB设计和电气计算</p>
+        </div>
+    </footer>
+
+    <script src="../assets/js/nav.js"></script>
+    <script>
+        const lengthInput = document.getElementById('length');
+        const widthInput = document.getElementById('width');
+        const thicknessInput = document.getElementById('thickness');
+        const temperatureInput = document.getElementById('temperature');
+        const calculateBtn = document.getElementById('calculate-btn');
+        const materialButtons = document.querySelectorAll('.material-btn');
+        
+        const paramLength = document.getElementById('param-length');
+        const paramWidth = document.getElementById('param-width');
+        const paramMaterial = document.getElementById('param-material');
+        const paramThickness = document.getElementById('param-thickness');
+        const paramResistivity = document.getElementById('param-resistivity');
+        const paramTemperature = document.getElementById('param-temperature');
+        
+        let currentMaterial = 'copper';
+        let currentResistivity = 1.68e-8;
+        
+        const tempCoeff = { 'copper': 0.00393, 'aluminum': 0.00403, 'gold': 0.00340 };
+        const materialNames = { 'copper': '铜 (Cu)', 'aluminum': '铝 (Al)', 'gold': '金 (Au)' };
+        const ozToMeter = 35e-6;
+        
+        materialButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                materialButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                currentMaterial = this.getAttribute('data-material');
+                currentResistivity = parseFloat(this.getAttribute('data-resistivity'));
+                paramMaterial.textContent = materialNames[currentMaterial];
+                paramResistivity.textContent = currentResistivity.toExponential(2) + ' Ω·m';
+                calculateDCR();
+            });
+        });
+        
+        function calculateDCR() {
+            const length = parseFloat(lengthInput.value);
+            const width = parseFloat(widthInput.value);
+            const thicknessOz = parseFloat(thicknessInput.value);
+            const temperature = parseFloat(temperatureInput.value);
+            
+            paramLength.textContent = length + ' mm';
+            paramWidth.textContent = width + ' mm';
+            paramThickness.textContent = thicknessOz + ' oz';
+            paramTemperature.textContent = temperature + ' °C';
+            
+            const lengthM = length / 1000;
+            const widthM = width / 1000;
+            const thicknessM = thicknessOz * ozToMeter;
+            
+            let dcr = currentResistivity * lengthM / (widthM * thicknessM);
+            
+            if (temperature !== 20) {
+                dcr = dcr * (1 + tempCoeff[currentMaterial] * (temperature - 20));
+            }
+            
+            const dcrDisplay = dcr < 0.001 ? (dcr * 1000).toFixed(4) + ' mΩ' : dcr.toFixed(4) + ' Ω';
+            document.getElementById('dcr-value').textContent = dcrDisplay;
+            document.getElementById('resistance-per-mm').textContent = (dcr / length).toExponential(4) + ' Ω/mm';
+            document.getElementById('voltage-drop').textContent = dcr.toExponential(4) + ' V';
+            document.getElementById('power-loss').textContent = dcr.toExponential(4) + ' W';
+        }
+        
+        [lengthInput, widthInput, thicknessInput, temperatureInput].forEach(input => {
+            input.addEventListener('input', calculateDCR);
+        });
+        
+        calculateBtn.addEventListener('click', calculateDCR);
+        calculateDCR();
+    </script>
+</body>
+</html>

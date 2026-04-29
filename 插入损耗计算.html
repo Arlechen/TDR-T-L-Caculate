@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PCB微带线插入损耗计算器（含介电损耗因子Df）</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #4a6fa5;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+        
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .input-section {
+            flex: 1;
+            min-width: 300px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            padding: 25px;
+        }
+        
+        .result-section {
+            flex: 1;
+            min-width: 300px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            padding: 25px;
+        }
+        
+        .section-title {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ecf0f1;
+            font-size: 1.4rem;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #34495e;
+        }
+        
+        input[type="number"], select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="number"]:focus, select:focus {
+            border-color: #4a6fa5;
+            outline: none;
+        }
+        
+        .range-container {
+            display: flex;
+            align-items: center;
+            margin-top: 5px;
+        }
+        
+        .range-value {
+            margin-left: 10px;
+            min-width: 60px;
+            font-weight: bold;
+            color: #4a6fa5;
+        }
+        
+        .preset-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .preset-btn {
+            padding: 8px 15px;
+            background-color: #ecf0f1;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .preset-btn:hover {
+            background-color: #d5dbdb;
+        }
+        
+        .preset-btn.active {
+            background-color: #4a6fa5;
+            color: white;
+        }
+        
+        .result-display {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .result-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #2c3e50;
+            text-align: center;
+            margin: 15px 0;
+        }
+        
+        .result-label {
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 1rem;
+        }
+        
+        .loss-breakdown {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .loss-item {
+            flex: 1;
+            padding: 10px;
+        }
+        
+        .loss-value {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .loss-label {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+        
+        .chart-container {
+            height: 300px;
+            margin-top: 25px;
+        }
+        
+        .calculation-steps {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 25px;
+            font-size: 0.9rem;
+        }
+        
+        .step {
+            margin-bottom: 10px;
+            padding-left: 10px;
+            border-left: 3px solid #4a6fa5;
+        }
+        
+        .formula {
+            font-family: 'Courier New', monospace;
+            background-color: #eee;
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin: 5px 0;
+            overflow-x: auto;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .loss-breakdown {
+                flex-direction: column;
+            }
+            
+            .loss-item {
+                margin-bottom: 15px;
+            }
+        }
+        
+        .unit {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-left: 5px;
+        }
+        
+        .note {
+            background-color: #fffde7;
+            border-left: 4px solid #ffd600;
+            padding: 12px;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            border-radius: 0 4px 4px 0;
+        }
+        
+        .materials-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 0.85rem;
+        }
+        
+        .materials-table th, .materials-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        
+        .materials-table th {
+            background-color: #f2f2f2;
+            font-weight: 600;
+        }
+        
+        .materials-table tr:hover {
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>PCB微带线插入损耗计算器</h1>
+        <p class="subtitle">计算和分析PCB微带线在不同频率下的插入损耗，包含介电损耗因子Df(tanδ)</p>
+    </header>
+    
+    <div class="container">
+        <div class="input-section">
+            <h2 class="section-title">传输线参数设置</h2>
+            
+            <div class="input-group">
+                <label for="freq">频率 (GHz)</label>
+                <div class="range-container">
+                    <input type="range" id="freq-range" min="0.1" max="40" step="0.1" value="5">
+                    <input type="number" id="freq" min="0.1" max="100" step="0.1" value="5">
+                    <span class="range-value" id="freq-value">5 GHz</span>
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label for="length">传输线长度 (mm)</label>
+                <div class="range-container">
+                    <input type="range" id="length-range" min="10" max="500" step="5" value="100">
+                    <input type="number" id="length" min="1" max="1000" step="1" value="100">
+                    <span class="range-value" id="length-value">100 mm</span>
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label for="width">线宽 (mm)</label>
+                <div class="range-container">
+                    <input type="range" id="width-range" min="0.1" max="2" step="0.05" value="0.3">
+                    <input type="number" id="width" min="0.05" max="5" step="0.05" value="0.3">
+                    <span class="range-value" id="width-value">0.3 mm</span>
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label for="thickness">铜厚 (μm)</label>
+                <div class="range-container">
+                    <input type="range" id="thickness-range" min="5" max="70" step="5" value="35">
+                    <input type="number" id="thickness" min="5" max="100" step="5" value="35">
+                    <span class="range-value" id="thickness-value">35 μm</span>
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label for="material">基板材料</label>
+                <select id="material">
+                    <option value="fr4_standard">FR4 标准 (εr=4.3, Df=0.02)</option>
+                    <option value="fr4_medium">FR4 中损耗 (εr=4.0, Df=0.015)</option>
+                    <option value="fr4_lowloss">FR4 低损耗 (εr=4.1, Df=0.01)</option>
+                    <option value="rogers4350">Rogers RO4350B (εr=3.48, Df=0.0037)</option>
+                    <option value="rogers4003">Rogers RO4003C (εr=3.38, Df=0.0027)</option>
+                    <option value="rogers3003">Rogers RO3003 (εr=3.0, Df=0.0013)</option>
+                    <option value="megtron6">松下 Megtron 6 (εr=3.7, Df=0.002)</option>
+                    <option value="megtron7">松下 Megtron 7 (εr=3.3, Df=0.001)</option>
+                    <option value="isola370hr">Isola 370HR (εr=4.0, Df=0.008)</option>
+                    <option value="custom">自定义材料</option>
+                </select>
+            </div>
+            
+            <div class="input-group" id="er-group">
+                <label for="er">相对介电常数 (εr)</label>
+                <div class="range-container">
+                    <input type="range" id="er-range" min="2" max="10" step="0.1" value="4.3">
+                    <input type="number" id="er" min="1" max="20" step="0.1" value="4.3">
+                    <span class="range-value" id="er-value">4.3</span>
+                </div>
+            </div>
+            
+            <div class="input-group" id="tand-group">
+                <label for="tand">介电损耗因子 (Df, tanδ)</label>
+                <div class="range-container">
+                    <input type="range" id="tand-range" min="0.0005" max="0.05" step="0.0005" value="0.02">
+                    <input type="number" id="tand" min="0.0001" max="0.1" step="0.0005" value="0.02">
+                    <span class="range-value" id="tand-value">0.02</span>
+                </div>
+            </div>
+            
+            <div class="note">
+                <strong>注：</strong>介电损耗因子Df等于损耗角正切tanδ，表示介电材料中能量损耗的比例。Df值越小，材料的高频性能越好。
+            </div>
+            
+            <div class="preset-buttons">
+                <div class="preset-btn active" data-preset="default">典型微带线</div>
+                <div class="preset-btn" data-preset="highspeed">高速数字(5GHz)</div>
+                <div class="preset-btn" data-preset="rf">射频应用(10GHz)</div>
+                <div class="preset-btn" data-preset="lowloss">低损耗设计</div>
+                <div class="preset-btn" data-preset="mmwave">毫米波(30GHz)</div>
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <h3 style="margin-bottom: 10px;">常见PCB材料参数参考</h3>
+                <table class="materials-table">
+                    <thead>
+                        <tr>
+                            <th>材料</th>
+                            <th>εr</th>
+                            <th>Df (tanδ) @ 10GHz</th>
+                            <th>典型应用</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>FR4 标准</td>
+                            <td>4.3-4.5</td>
+                            <td>0.018-0.025</td>
+                            <td>普通数字电路</td>
+                        </tr>
+                        <tr>
+                            <td>FR4 低损耗</td>
+                            <td>4.0-4.2</td>
+                            <td>0.008-0.012</td>
+                            <td>中速数字电路</td>
+                        </tr>
+                        <tr>
+                            <td>Rogers RO4350B</td>
+                            <td>3.48</td>
+                            <td>0.0037</td>
+                            <td>射频/微波</td>
+                        </tr>
+                        <tr>
+                            <td>Rogers RO4003C</td>
+                            <td>3.38</td>
+                            <td>0.0027</td>
+                            <td>高频电路</td>
+                        </tr>
+                        <tr>
+                            <td>松下 Megtron 6</td>
+                            <td>3.7</td>
+                            <td>0.002</td>
+                            <td>高速数字</td>
+                        </tr>
+                        <tr>
+                            <td>松下 Megtron 7</td>
+                            <td>3.3</td>
+                            <td>0.001</td>
+                            <td>超高速/毫米波</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="result-section">
+            <h2 class="section-title">插入损耗计算结果</h2>
+            
+            <div class="result-display">
+                <p class="result-label">在 <span id="result-freq">5</span> GHz 频率下</p>
+                <div class="result-value" id="total-loss">-2.82 dB</div>
+                <p class="result-label">总插入损耗 (长度: <span id="result-length">100</span> mm)</p>
+                
+                <div class="loss-breakdown">
+                    <div class="loss-item">
+                        <div class="loss-value" id="conductor-loss">-1.50 dB</div>
+                        <div class="loss-label">导体损耗</div>
+                    </div>
+                    <div class="loss-item">
+                        <div class="loss-value" id="dielectric-loss">-1.32 dB</div>
+                        <div class="loss-label">介质损耗</div>
+                    </div>
+                    <div class="loss-item">
+                        <div class="loss-value" id="db-per-cm">-2.82 dB/10cm</div>
+                        <div class="loss-label">每10cm损耗</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="lossChart"></canvas>
+            </div>
+            
+            <div class="calculation-steps">
+                <h3>计算步骤</h3>
+                <div class="step">1. 介质损耗常数: α<sub>d</sub> = (π × f × √ε<sub>r</sub> × Df) / c <span class="unit">(Np/m)</span></div>
+                <div class="step">2. 导体损耗常数: α<sub>c</sub> = (R<sub>s</sub> × K) / (Z<sub>0</sub> × W) <span class="unit">(Np/m)</span></div>
+                <div class="step">3. 总损耗常数: α<sub>total</sub> = α<sub>c</sub> + α<sub>d</sub></div>
+                <div class="step">4. 总插入损耗: IL = 8.686 × α<sub>total</sub> × L <span class="unit">(dB)</span></div>
+                <div id="current-calculation" class="formula">正在计算...</div>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>PCB微带线插入损耗计算器 | 基于简化模型，适用于初步设计和分析</p>
+        <p>注意：实际损耗可能因表面粗糙度、辐射损耗、阻抗不连续性等因素而有所不同</p>
+    </footer>
+
+    <script>
+        // DOM元素
+        const freqInput = document.getElementById('freq');
+        const freqRange = document.getElementById('freq-range');
+        const freqValue = document.getElementById('freq-value');
+        const lengthInput = document.getElementById('length');
+        const lengthRange = document.getElementById('length-range');
+        const lengthValue = document.getElementById('length-value');
+        const widthInput = document.getElementById('width');
+        const widthRange = document.getElementById('width-range');
+        const widthValue = document.getElementById('width-value');
+        const thicknessInput = document.getElementById('thickness');
+        const thicknessRange = document.getElementById('thickness-range');
+        const thicknessValue = document.getElementById('thickness-value');
+        const materialSelect = document.getElementById('material');
+        const erInput = document.getElementById('er');
+        const erRange = document.getElementById('er-range');
+        const erValue = document.getElementById('er-value');
+        const tandInput = document.getElementById('tand');
+        const tandRange = document.getElementById('tand-range');
+        const tandValue = document.getElementById('tand-value');
+        const presetButtons = document.querySelectorAll('.preset-btn');
+        
+        // 结果元素
+        const totalLossElement = document.getElementById('total-loss');
+        const conductorLossElement = document.getElementById('conductor-loss');
+        const dielectricLossElement = document.getElementById('dielectric-loss');
+        const dbPerCmElement = document.getElementById('db-per-cm');
+        const resultFreqElement = document.getElementById('result-freq');
+        const resultLengthElement = document.getElementById('result-length');
+        const currentCalculationElement = document.getElementById('current-calculation');
+        
+        // 材料参数预设
+        const materialPresets = {
+            fr4_standard: { er: 4.3, tand: 0.02 },
+            fr4_medium: { er: 4.0, tand: 0.015 },
+            fr4_lowloss: { er: 4.1, tand: 0.01 },
+            rogers4350: { er: 3.48, tand: 0.0037 },
+            rogers4003: { er: 3.38, tand: 0.0027 },
+            rogers3003: { er: 3.0, tand: 0.0013 },
+            megtron6: { er: 3.7, tand: 0.002 },
+            megtron7: { er: 3.3, tand: 0.001 },
+            isola370hr: { er: 4.0, tand: 0.008 },
+            custom: { er: 4.3, tand: 0.02 }
+        };
+        
+        // 配置预设
+        const configPresets = {
+            default: {
+                freq: 5,
+                length: 100,
+                width: 0.3,
+                thickness: 35,
+                material: 'fr4_standard'
+            },
+            highspeed: {
+                freq: 5,
+                length: 150,
+                width: 0.2,
+                thickness: 35,
+                material: 'megtron6'
+            },
+            rf: {
+                freq: 10,
+                length: 50,
+                width: 0.5,
+                thickness: 35,
+                material: 'rogers4350'
+            },
+            lowloss: {
+                freq: 1,
+                length: 200,
+                width: 0.4,
+                thickness: 70,
+                material: 'rogers4003'
+            },
+            mmwave: {
+                freq: 30,
+                length: 20,
+                width: 0.15,
+                thickness: 18,
+                material: 'megtron7'
+            }
+        };
+        
+        // 图表变量
+        let lossChart;
+        let frequencyData = [];
+        let totalLossData = [];
+        let conductorLossData = [];
+        let dielectricLossData = [];
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+            updateAllValues();
+            initializeChart();
+            generateFrequencyResponse();
+        });
+        
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 频率输入同步
+            freqInput.addEventListener('input', function() {
+                freqRange.value = this.value;
+                freqValue.textContent = this.value + ' GHz';
+                updateAllValues();
+                generateFrequencyResponse();
+            });
+            
+            freqRange.addEventListener('input', function() {
+                freqInput.value = this.value;
+                freqValue.textContent = this.value + ' GHz';
+                updateAllValues();
+                generateFrequencyResponse();
+            });
+            
+            // 长度输入同步
+            lengthInput.addEventListener('input', function() {
+                lengthRange.value = this.value;
+                lengthValue.textContent = this.value + ' mm';
+                updateAllValues();
+            });
+            
+            lengthRange.addEventListener('input', function() {
+                lengthInput.value = this.value;
+                lengthValue.textContent = this.value + ' mm';
+                updateAllValues();
+            });
+            
+            // 线宽输入同步
+            widthInput.addEventListener('input', function() {
+                widthRange.value = this.value;
+                widthValue.textContent = this.value + ' mm';
+                updateAllValues();
+                generateFrequencyResponse();
+            });
+            
+            widthRange.addEventListener('input', function() {
+                widthInput.value = this.value;
+                widthValue.textContent = this.value + ' mm';
+                updateAllValues();
+                generateFrequencyResponse();
+            });
+            
+            // 铜厚输入同步
+            thicknessInput.addEventListener('input', function() {
+                thicknessRange.value = this.value;
+                thicknessValue.textContent = this.value + ' μm';
+                updateAllValues();
+                generateFrequencyResponse();
+            });
+            
+            thicknessRange.addEventListener('input', function() {
+                thicknessInput.value = this.value;
+                thicknessValue.textContent = this.value + ' μm';
+                updateAllValues();
+                generateFrequencyResponse();
+            });
+            
+            // 介电常数输入同步
+            erInput.addEventListener('input', function() {
+                erRange.value = this.value;
+                erValue.textContent = this.value;
+                updateAllValues();
+                generateFrequencyResponse();
+            });
+            
+            erRange.addEventListener('input', function() {
+                erInput.value = this.value;
+                erValue.textContent = this.value;
+                updateAllValues();
+                generateFrequencyResponse();
+            });
+            
+            // 介电损耗因子Df输入同步
+            tandInput.addEventListener('input', function() {
+                tandRange.value = this.value;
+                tandValue.textContent = this.value;
+                updateAllValues();
+                generateFrequencyResponse();
+            });
+            
+            tandRange.addEventListener('input', function() {
+                tandInput.value = this.value;
+                tandValue.textContent = this.value;
+                updateAllValues();
+                generateFrequencyResponse();
+            });
+            
+            // 材料选择
+            materialSelect.addEventListener('change', function() {
+                const material = this.value;
+                const preset = materialPresets[material];
+                
+                erInput.value = preset.er;
+                erRange.value = preset.er;
+                erValue.textContent = preset.er;
+                
+                tandInput.value = preset.tand;
+                tandRange.value = preset.tand;
+                tandValue.textContent = preset.tand;
+                
+                // 更新自定义选项的显示
+                if (material === 'custom') {
+                    document.getElementById('er-group').style.display = 'block';
+                    document.getElementById('tand-group').style.display = 'block';
+                } else {
+                    document.getElementById('er-group').style.display = 'block';
+                    document.getElementById('tand-group').style.display = 'block';
+                }
+                
+                updateAllValues();
+                generateFrequencyResponse();
+            });
+            
+            // 预设按钮
+            presetButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const preset = this.getAttribute('data-preset');
+                    
+                    // 移除所有按钮的active类
+                    presetButtons.forEach(btn => btn.classList.remove('active'));
+                    // 添加当前按钮的active类
+                    this.classList.add('active');
+                    
+                    // 应用预设
+                    applyPreset(preset);
+                    updateAllValues();
+                    generateFrequencyResponse();
+                });
+            });
+        }
+        
+        // 应用预设配置
+        function applyPreset(presetName) {
+            const preset = configPresets[presetName];
+            
+            if (!preset) return;
+            
+            freqInput.value = preset.freq;
+            freqRange.value = preset.freq;
+            freqValue.textContent = preset.freq + ' GHz';
+            
+            lengthInput.value = preset.length;
+            lengthRange.value = preset.length;
+            lengthValue.textContent = preset.length + ' mm';
+            
+            widthInput.value = preset.width;
+            widthRange.value = preset.width;
+            widthValue.textContent = preset.width + ' mm';
+            
+            thicknessInput.value = preset.thickness;
+            thicknessRange.value = preset.thickness;
+            thicknessValue.textContent = preset.thickness + ' μm';
+            
+            materialSelect.value = preset.material;
+            const materialPreset = materialPresets[preset.material];
+            erInput.value = materialPreset.er;
+            erRange.value = materialPreset.er;
+            erValue.textContent = materialPreset.er;
+            
+            tandInput.value = materialPreset.tand;
+            tandRange.value = materialPreset.tand;
+            tandValue.textContent = materialPreset.tand;
+        }
+        
+        // 更新所有值并重新计算
+        function updateAllValues() {
+            // 获取当前输入值
+            const freq = parseFloat(freqInput.value); // GHz
+            const length = parseFloat(lengthInput.value) / 1000; // 转换为米
+            const width = parseFloat(widthInput.value) / 1000; // 转换为米
+            const thickness = parseFloat(thicknessInput.value) / 1e6; // 转换为米
+            const er = parseFloat(erInput.value);
+            const tand = parseFloat(tandInput.value);
+            
+            // 更新结果显示
+            resultFreqElement.textContent = freq;
+            resultLengthElement.textContent = length * 1000;
+            
+            // 计算插入损耗
+            const result = calculateInsertionLoss(freq, length, width, thickness, er, tand);
+            
+            // 更新结果显示
+            totalLossElement.textContent = result.totalLoss.toFixed(2) + ' dB';
+            conductorLossElement.textContent = result.conductorLoss.toFixed(2) + ' dB';
+            dielectricLossElement.textContent = result.dielectricLoss.toFixed(2) + ' dB';
+            dbPerCmElement.textContent = (result.totalLoss / (length * 10)).toFixed(2) + ' dB/10cm';
+            
+            // 更新计算步骤
+            updateCalculationSteps(freq, length, width, thickness, er, tand, result);
+        }
+        
+        // 计算插入损耗（改进版）
+        function calculateInsertionLoss(freq, length, width, thickness, er, tand) {
+            const f = freq * 1e9; // 转换为Hz
+            const c = 3e8; // 光速，m/s
+            const mu0 = 4 * Math.PI * 1e-7; // 真空磁导率
+            
+            // 1. 计算介质损耗常数 (Np/m)
+            // α_d = (π * f * √εr * tanδ) / c
+            const alpha_d = (Math.PI * f * Math.sqrt(er) * tand) / c;
+            
+            // 2. 计算导体损耗常数 (Np/m)
+            // 考虑趋肤效应和表面粗糙度
+            const sigma = 5.8e7; // 铜的电导率，S/m
+            const skinDepth = Math.sqrt(2 / (2 * Math.PI * f * mu0 * sigma));
+            
+            // 表面电阻率 Rs = 1/(σ*δ)
+            const Rs = 1 / (sigma * skinDepth);
+            
+            // 微带线特性阻抗近似计算
+            // 简化公式：对于典型微带线，Z0 ≈ 87/√(εr+1.41) * ln(5.98*h/(0.8*w+t))
+            const h = 0.2e-3; // 介质厚度，假设0.2mm
+            const Z0 = 87 / Math.sqrt(er + 1.41) * Math.log(5.98 * h / (0.8 * width + thickness));
+            
+            // 考虑高频下的边缘效应和电流分布不均匀性
+            const K = 1.0 + Math.exp(-width/(2*h)); // 修正因子
+            
+            // 导体损耗常数 α_c = (Rs * K) / (Z0 * w)
+            const alpha_c = (Rs * K) / (Z0 * width);
+            
+            // 3. 转换为dB/m并乘以长度
+            const alpha_d_dB = 8.686 * alpha_d * length;
+            const alpha_c_dB = 8.686 * alpha_c * length;
+            const totalLoss = alpha_d_dB + alpha_c_dB;
+            
+            return {
+                dielectricLoss: alpha_d_dB,
+                conductorLoss: alpha_c_dB,
+                totalLoss: totalLoss,
+                alpha_d: alpha_d,
+                alpha_c: alpha_c,
+                skinDepth: skinDepth,
+                Rs: Rs,
+                Z0: Z0
+            };
+        }
+        
+        // 更新计算步骤显示
+        function updateCalculationSteps(freq, length, width, thickness, er, tand, result) {
+            const f = freq * 1e9;
+            const c = 3e8;
+            
+            const steps = `
+                1. 介质损耗常数: α<sub>d</sub> = (π × ${freq}×10⁹ × √${er} × ${tand}) / 3×10⁸ = ${result.alpha_d.toExponential(3)} Np/m
+                <br>
+                2. 导体损耗常数: α<sub>c</sub> = R<sub>s</sub> × K / (Z<sub>0</sub> × W) = ${result.Rs.toFixed(4)} × 1.0 / (${result.Z0.toFixed(1)} × ${(width*1000).toFixed(3)}×10⁻³) = ${result.alpha_c.toExponential(3)} Np/m
+                <br>
+                3. 总损耗常数: α<sub>total</sub> = α<sub>c</sub> + α<sub>d</sub> = ${(result.alpha_c + result.alpha_d).toExponential(3)} Np/m
+                <br>
+                4. 总插入损耗: IL = 8.686 × ${(result.alpha_c + result.alpha_d).toExponential(3)} × ${(length*1000).toFixed(1)}×10⁻³ = ${result.totalLoss.toFixed(2)} dB
+                <br>
+                5. 特性阻抗: Z<sub>0</sub> ≈ ${result.Z0.toFixed(1)} Ω
+            `;
+            
+            currentCalculationElement.innerHTML = steps;
+        }
+        
+        // 初始化图表
+        function initializeChart() {
+            const ctx = document.getElementById('lossChart').getContext('2d');
+            
+            lossChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: frequencyData,
+                    datasets: [
+                        {
+                            label: '总插入损耗',
+                            data: totalLossData,
+                            borderColor: '#4a6fa5',
+                            backgroundColor: 'rgba(74, 111, 165, 0.1)',
+                            borderWidth: 3,
+                            fill: false,
+                            tension: 0.3
+                        },
+                        {
+                            label: '导体损耗',
+                            data: conductorLossData,
+                            borderColor: '#e74c3c',
+                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0.3
+                        },
+                        {
+                            label: '介质损耗',
+                            data: dielectricLossData,
+                            borderColor: '#27ae60',
+                            backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                            borderWidth: 2,
+                            borderDash: [2, 2],
+                            fill: false,
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '插入损耗 vs 频率',
+                            font: {
+                                size: 16
+                            }
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: '频率 (GHz)'
+                            },
+                            grid: {
+                                color: 'rgba(0,0,0,0.05)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: '插入损耗 (dB)'
+                            },
+                            grid: {
+                                color: 'rgba(0,0,0,0.05)'
+                            },
+                            beginAtZero: true
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'nearest'
+                    }
+                }
+            });
+        }
+        
+        // 生成频率响应数据
+        function generateFrequencyResponse() {
+            // 获取当前参数
+            const length = parseFloat(lengthInput.value) / 1000; // 转换为米
+            const width = parseFloat(widthInput.value) / 1000; // 转换为米
+            const thickness = parseFloat(thicknessInput.value) / 1e6; // 转换为米
+            const er = parseFloat(erInput.value);
+            const tand = parseFloat(tandInput.value);
+            
+            // 清空数据
+            frequencyData = [];
+            totalLossData = [];
+            conductorLossData = [];
+            dielectricLossData = [];
+            
+            // 生成频率范围：从0.1 GHz到40 GHz
+            for (let f = 0.1; f <= 40; f += 0.5) {
+                frequencyData.push(f.toFixed(1));
+                
+                // 计算该频率下的插入损耗
+                const result = calculateInsertionLoss(f, length, width, thickness, er, tand);
+                totalLossData.push(result.totalLoss);
+                conductorLossData.push(result.conductorLoss);
+                dielectricLossData.push(result.dielectricLoss);
+            }
+            
+            // 更新图表
+            if (lossChart) {
+                lossChart.data.labels = frequencyData;
+                lossChart.data.datasets[0].data = totalLossData;
+                lossChart.data.datasets[1].data = conductorLossData;
+                lossChart.data.datasets[2].data = dielectricLossData;
+                lossChart.update();
+            }
+        }
+    </script>
+</body>
+</html>

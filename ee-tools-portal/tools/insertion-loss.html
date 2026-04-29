@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>插入损耗计算 - EE Tools</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/common.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --accent-blue: #3b82f6;
+            --accent-blue-dark: #1d4ed8;
+            --accent-red: #ef4444;
+            --accent-green: #22c55e;
+        }
+        
+        body {
+            background: var(--bg-primary);
+            padding-top: 64px;
+        }
+        
+        .tool-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+        
+        .tool-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .tool-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #3b82f6, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .tool-subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+        
+        .tool-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        @media (max-width: 900px) {
+            .tool-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .input-section, .result-section {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+        }
+        
+        .section-title {
+            color: var(--text-primary);
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-title svg {
+            width: 24px;
+            height: 24px;
+            color: var(--accent-primary);
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .range-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            -webkit-appearance: none;
+            background: var(--bg-secondary);
+            border-radius: 3px;
+            outline: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+        }
+        
+        input[type="number"] {
+            width: 80px;
+            text-align: center;
+        }
+        
+        .range-value {
+            min-width: 70px;
+            text-align: right;
+            color: var(--accent-primary);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        select {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            width: 100%;
+            cursor: pointer;
+        }
+        
+        select:focus {
+            border-color: var(--accent-primary);
+            outline: none;
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+        
+        .preset-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .preset-btn {
+            padding: 8px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+        
+        .preset-btn:hover {
+            border-color: var(--accent-primary);
+            color: var(--text-primary);
+        }
+        
+        .preset-btn.active {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+            color: white;
+        }
+        
+        .note-box {
+            background: rgba(245, 158, 11, 0.1);
+            border-left: 4px solid var(--warning);
+            padding: 12px 16px;
+            margin-top: 20px;
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        
+        .result-display {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            padding: 24px;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        
+        .result-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        .result-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+            margin: 12px 0;
+        }
+        
+        .loss-breakdown {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .loss-item {
+            text-align: center;
+        }
+        
+        .loss-value {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .loss-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        
+        .chart-container {
+            height: 280px;
+            margin-top: 20px;
+        }
+        
+        .calculation-steps {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .step {
+            margin-bottom: 10px;
+            padding-left: 12px;
+            border-left: 3px solid var(--accent-primary);
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        
+        .formula-display {
+            font-family: 'Courier New', monospace;
+            background: var(--bg-card);
+            padding: 10px 14px;
+            border-radius: var(--radius-sm);
+            margin-top: 12px;
+            font-size: 0.8rem;
+            color: var(--text-primary);
+            overflow-x: auto;
+        }
+        
+        .materials-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 0.85rem;
+        }
+        
+        .materials-table th, .materials-table td {
+            border: 1px solid var(--border-color);
+            padding: 10px 8px;
+            text-align: center;
+        }
+        
+        .materials-table th {
+            background: var(--bg-secondary);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .materials-table td {
+            color: var(--text-secondary);
+        }
+        
+        .materials-table tr:hover td {
+            background: rgba(59, 130, 246, 0.05);
+        }
+        
+        @media (max-width: 768px) {
+            .loss-breakdown {
+                flex-direction: column;
+                gap: 16px;
+            }
+            
+            .result-value {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="nav-container"></div>
+    
+    <div class="tool-container">
+        <div class="tool-header">
+            <h1 class="tool-title">PCB微带线插入损耗计算器</h1>
+            <p class="tool-subtitle">计算和分析PCB微带线在不同频率下的插入损耗，包含介电损耗因子Df(tanδ)</p>
+        </div>
+        
+        <div class="tool-grid">
+            <div class="input-section">
+                <h2 class="section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M12 1v6m0 6v10"/>
+                        <path d="m4.93 4.93 4.24 4.24m5.66 5.66 4.24 4.24"/>
+                        <path d="M1 12h6m6 0h10"/>
+                        <path d="m4.93 19.07 4.24-4.24m5.66-5.66 4.24-4.24"/>
+                    </svg>
+                    传输线参数设置
+                </h2>
+                
+                <div class="input-group">
+                    <label for="freq">频率 (GHz)</label>
+                    <div class="range-container">
+                        <input type="range" id="freq-range" min="0.1" max="40" step="0.1" value="5">
+                        <input type="number" id="freq" min="0.1" max="100" step="0.1" value="5">
+                        <span class="range-value" id="freq-value">5 GHz</span>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="length">传输线长度 (mm)</label>
+                    <div class="range-container">
+                        <input type="range" id="length-range" min="10" max="500" step="5" value="100">
+                        <input type="number" id="length" min="1" max="1000" step="1" value="100">
+                        <span class="range-value" id="length-value">100 mm</span>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="width">线宽 (mm)</label>
+                    <div class="range-container">
+                        <input type="range" id="width-range" min="0.1" max="2" step="0.05" value="0.3">
+                        <input type="number" id="width" min="0.05" max="5" step="0.05" value="0.3">
+                        <span class="range-value" id="width-value">0.3 mm</span>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="thickness">铜厚 (μm)</label>
+                    <div class="range-container">
+                        <input type="range" id="thickness-range" min="5" max="70" step="5" value="35">
+                        <input type="number" id="thickness" min="5" max="100" step="5" value="35">
+                        <span class="range-value" id="thickness-value">35 μm</span>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="material">基板材料</label>
+                    <select id="material">
+                        <option value="fr4_standard">FR4 标准 (εr=4.3, Df=0.02)</option>
+                        <option value="fr4_medium">FR4 中损耗 (εr=4.0, Df=0.015)</option>
+                        <option value="fr4_lowloss">FR4 低损耗 (εr=4.1, Df=0.01)</option>
+                        <option value="rogers4350">Rogers RO4350B (εr=3.48, Df=0.0037)</option>
+                        <option value="rogers4003">Rogers RO4003C (εr=3.38, Df=0.0027)</option>
+                        <option value="rogers3003">Rogers RO3003 (εr=3.0, Df=0.0013)</option>
+                        <option value="megtron6">松下 Megtron 6 (εr=3.7, Df=0.002)</option>
+                        <option value="megtron7">松下 Megtron 7 (εr=3.3, Df=0.001)</option>
+                        <option value="isola370hr">Isola 370HR (εr=4.0, Df=0.008)</option>
+                        <option value="custom">自定义材料</option>
+                    </select>
+                </div>
+                
+                <div class="input-group" id="er-group">
+                    <label for="er">相对介电常数 (εr)</label>
+                    <div class="range-container">
+                        <input type="range" id="er-range" min="2" max="10" step="0.1" value="4.3">
+                        <input type="number" id="er" min="1" max="20" step="0.1" value="4.3">
+                        <span class="range-value" id="er-value">4.3</span>
+                    </div>
+                </div>
+                
+                <div class="input-group" id="tand-group">
+                    <label for="tand">介电损耗因子 (Df, tanδ)</label>
+                    <div class="range-container">
+                        <input type="range" id="tand-range" min="0.0005" max="0.05" step="0.0005" value="0.02">
+                        <input type="number" id="tand" min="0.0001" max="0.1" step="0.0005" value="0.02">
+                        <span class="range-value" id="tand-value">0.02</span>
+                    </div>
+                </div>
+                
+                <div class="note-box">
+                    <strong>注：</strong>介电损耗因子Df等于损耗角正切tanδ，表示介电材料中能量损耗的比例。Df值越小，材料的高频性能越好。
+                </div>
+                
+                <div class="preset-buttons">
+                    <button class="preset-btn active" data-preset="default">典型微带线</button>
+                    <button class="preset-btn" data-preset="highspeed">高速数字(5GHz)</button>
+                    <button class="preset-btn" data-preset="rf">射频应用(10GHz)</button>
+                    <button class="preset-btn" data-preset="lowloss">低损耗设计</button>
+                    <button class="preset-btn" data-preset="mmwave">毫米波(30GHz)</button>
+                </div>
+                
+                <h3 style="margin-top: 24px; margin-bottom: 12px; color: var(--text-primary);">常见PCB材料参数参考</h3>
+                <table class="materials-table">
+                    <thead>
+                        <tr>
+                            <th>材料</th>
+                            <th>εr</th>
+                            <th>Df @ 10GHz</th>
+                            <th>典型应用</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>FR4 标准</td><td>4.3-4.5</td><td>0.018-0.025</td><td>普通数字电路</td></tr>
+                        <tr><td>FR4 低损耗</td><td>4.0-4.2</td><td>0.008-0.012</td><td>中速数字电路</td></tr>
+                        <tr><td>Rogers RO4350B</td><td>3.48</td><td>0.0037</td><td>射频/微波</td></tr>
+                        <tr><td>Rogers RO4003C</td><td>3.38</td><td>0.0027</td><td>高频电路</td></tr>
+                        <tr><td>松下 Megtron 6</td><td>3.7</td><td>0.002</td><td>高速数字</td></tr>
+                        <tr><td>松下 Megtron 7</td><td>3.3</td><td>0.001</td><td>超高速/毫米波</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="result-section">
+                <h2 class="section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                    </svg>
+                    插入损耗计算结果
+                </h2>
+                
+                <div class="result-display">
+                    <p class="result-label">在 <span id="result-freq">5</span> GHz 频率下</p>
+                    <div class="result-value" id="total-loss">-2.82 dB</div>
+                    <p class="result-label">总插入损耗 (长度: <span id="result-length">100</span> mm)</p>
+                    
+                    <div class="loss-breakdown">
+                        <div class="loss-item">
+                            <div class="loss-value" id="conductor-loss">-1.50 dB</div>
+                            <div class="loss-label">导体损耗</div>
+                        </div>
+                        <div class="loss-item">
+                            <div class="loss-value" id="dielectric-loss">-1.32 dB</div>
+                            <div class="loss-label">介质损耗</div>
+                        </div>
+                        <div class="loss-item">
+                            <div class="loss-value" id="db-per-cm">-2.82 dB/10cm</div>
+                            <div class="loss-label">每10cm损耗</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="lossChart"></canvas>
+                </div>
+                
+                <div class="calculation-steps">
+                    <h3 style="color: var(--text-primary); margin-bottom: 12px; font-size: 1rem;">计算步骤</h3>
+                    <div class="step">1. 介质损耗常数: α<sub>d</sub> = (π × f × √ε<sub>r</sub> × Df) / c</div>
+                    <div class="step">2. 导体损耗常数: α<sub>c</sub> = (R<sub>s</sub> × K) / (Z<sub>0</sub> × W)</div>
+                    <div class="step">3. 总损耗常数: α<sub>total</sub> = α<sub>c</sub> + α<sub>d</sub></div>
+                    <div class="step">4. 总插入损耗: IL = 8.686 × α<sub>total</sub> × L</div>
+                    <div class="formula-display" id="current-calculation">正在计算...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="footer">
+        <div class="container">
+            <p>© 2026 EE Tools | 基于简化模型，适用于初步设计和分析</p>
+        </div>
+    </footer>
+
+    <script src="../assets/js/nav.js"></script>
+    <script>
+        // DOM元素
+        const freqInput = document.getElementById('freq');
+        const freqRange = document.getElementById('freq-range');
+        const freqValue = document.getElementById('freq-value');
+        const lengthInput = document.getElementById('length');
+        const lengthRange = document.getElementById('length-range');
+        const lengthValue = document.getElementById('length-value');
+        const widthInput = document.getElementById('width');
+        const widthRange = document.getElementById('width-range');
+        const widthValue = document.getElementById('width-value');
+        const thicknessInput = document.getElementById('thickness');
+        const thicknessRange = document.getElementById('thickness-range');
+        const thicknessValue = document.getElementById('thickness-value');
+        const materialSelect = document.getElementById('material');
+        const erInput = document.getElementById('er');
+        const erRange = document.getElementById('er-range');
+        const erValue = document.getElementById('er-value');
+        const tandInput = document.getElementById('tand');
+        const tandRange = document.getElementById('tand-range');
+        const tandValue = document.getElementById('tand-value');
+        const presetButtons = document.querySelectorAll('.preset-btn');
+        
+        // 结果元素
+        const totalLossElement = document.getElementById('total-loss');
+        const conductorLossElement = document.getElementById('conductor-loss');
+        const dielectricLossElement = document.getElementById('dielectric-loss');
+        const dbPerCmElement = document.getElementById('db-per-cm');
+        const resultFreqElement = document.getElementById('result-freq');
+        const resultLengthElement = document.getElementById('result-length');
+        const currentCalculationElement = document.getElementById('current-calculation');
+        
+        // 材料参数预设
+        const materialPresets = {
+            fr4_standard: { er: 4.3, tand: 0.02 },
+            fr4_medium: { er: 4.0, tand: 0.015 },
+            fr4_lowloss: { er: 4.1, tand: 0.01 },
+            rogers4350: { er: 3.48, tand: 0.0037 },
+            rogers4003: { er: 3.38, tand: 0.0027 },
+            rogers3003: { er: 3.0, tand: 0.0013 },
+            megtron6: { er: 3.7, tand: 0.002 },
+            megtron7: { er: 3.3, tand: 0.001 },
+            isola370hr: { er: 4.0, tand: 0.008 },
+            custom: { er: 4.3, tand: 0.02 }
+        };
+        
+        // 配置预设
+        const configPresets = {
+            default: { freq: 5, length: 100, width: 0.3, thickness: 35, material: 'fr4_standard' },
+            highspeed: { freq: 5, length: 150, width: 0.2, thickness: 35, material: 'megtron6' },
+            rf: { freq: 10, length: 50, width: 0.5, thickness: 35, material: 'rogers4350' },
+            lowloss: { freq: 1, length: 200, width: 0.4, thickness: 70, material: 'rogers4003' },
+            mmwave: { freq: 30, length: 20, width: 0.15, thickness: 18, material: 'megtron7' }
+        };
+        
+        let lossChart;
+        let frequencyData = [], totalLossData = [], conductorLossData = [], dielectricLossData = [];
+        
+        function setupEventListeners() {
+            const syncInputs = (input, range, display, unit = '') => {
+                input.addEventListener('input', () => {
+                    range.value = input.value;
+                    display.textContent = input.value + unit;
+                    updateAllValues();
+                    if ([freqInput, widthInput, thicknessInput, erInput, tandInput].includes(input)) {
+                        generateFrequencyResponse();
+                    }
+                });
+                range.addEventListener('input', () => {
+                    input.value = range.value;
+                    display.textContent = range.value + unit;
+                    updateAllValues();
+                    if ([freqInput, widthInput, thicknessInput, erInput, tandInput].includes(input)) {
+                        generateFrequencyResponse();
+                    }
+                });
+            };
+            
+            syncInputs(freqInput, freqRange, freqValue, ' GHz');
+            syncInputs(lengthInput, lengthRange, lengthValue, ' mm');
+            syncInputs(widthInput, widthRange, widthValue, ' mm');
+            syncInputs(thicknessInput, thicknessRange, thicknessValue, ' μm');
+            syncInputs(erInput, erRange, erValue);
+            syncInputs(tandInput, tandRange, tandValue);
+            
+            materialSelect.addEventListener('change', function() {
+                const preset = materialPresets[this.value];
+                erInput.value = preset.er; erRange.value = preset.er; erValue.textContent = preset.er;
+                tandInput.value = preset.tand; tandRange.value = preset.tand; tandValue.textContent = preset.tand;
+                updateAllValues();
+                generateFrequencyResponse();
+            });
+            
+            presetButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    presetButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    applyPreset(this.getAttribute('data-preset'));
+                    updateAllValues();
+                    generateFrequencyResponse();
+                });
+            });
+        }
+        
+        function applyPreset(presetName) {
+            const preset = configPresets[presetName];
+            if (!preset) return;
+            
+            freqInput.value = preset.freq; freqRange.value = preset.freq; freqValue.textContent = preset.freq + ' GHz';
+            lengthInput.value = preset.length; lengthRange.value = preset.length; lengthValue.textContent = preset.length + ' mm';
+            widthInput.value = preset.width; widthRange.value = preset.width; widthValue.textContent = preset.width + ' mm';
+            thicknessInput.value = preset.thickness; thicknessRange.value = preset.thickness; thicknessValue.textContent = preset.thickness + ' μm';
+            
+            materialSelect.value = preset.material;
+            const mp = materialPresets[preset.material];
+            erInput.value = mp.er; erRange.value = mp.er; erValue.textContent = mp.er;
+            tandInput.value = mp.tand; tandRange.value = mp.tand; tandValue.textContent = mp.tand;
+        }
+        
+        function updateAllValues() {
+            const freq = parseFloat(freqInput.value);
+            const length = parseFloat(lengthInput.value) / 1000;
+            const width = parseFloat(widthInput.value) / 1000;
+            const thickness = parseFloat(thicknessInput.value) / 1e6;
+            const er = parseFloat(erInput.value);
+            const tand = parseFloat(tandInput.value);
+            
+            resultFreqElement.textContent = freq;
+            resultLengthElement.textContent = length * 1000;
+            
+            const result = calculateInsertionLoss(freq, length, width, thickness, er, tand);
+            
+            totalLossElement.textContent = result.totalLoss.toFixed(2) + ' dB';
+            conductorLossElement.textContent = result.conductorLoss.toFixed(2) + ' dB';
+            dielectricLossElement.textContent = result.dielectricLoss.toFixed(2) + ' dB';
+            dbPerCmElement.textContent = (result.totalLoss / (length * 10)).toFixed(2) + ' dB/10cm';
+            
+            updateCalculationSteps(freq, length, width, thickness, er, tand, result);
+        }
+        
+        function calculateInsertionLoss(freq, length, width, thickness, er, tand) {
+            const f = freq * 1e9;
+            const c = 3e8;
+            const mu0 = 4 * Math.PI * 1e-7;
+            
+            const alpha_d = (Math.PI * f * Math.sqrt(er) * tand) / c;
+            
+            const sigma = 5.8e7;
+            const skinDepth = Math.sqrt(2 / (2 * Math.PI * f * mu0 * sigma));
+            const Rs = 1 / (sigma * skinDepth);
+            
+            const h = 0.2e-3;
+            const Z0 = 87 / Math.sqrt(er + 1.41) * Math.log(5.98 * h / (0.8 * width + thickness));
+            
+            const K = 1.0 + Math.exp(-width/(2*h));
+            const alpha_c = (Rs * K) / (Z0 * width);
+            
+            const alpha_d_dB = 8.686 * alpha_d * length;
+            const alpha_c_dB = 8.686 * alpha_c * length;
+            const totalLoss = alpha_d_dB + alpha_c_dB;
+            
+            return { dielectricLoss: alpha_d_dB, conductorLoss: alpha_c_dB, totalLoss, alpha_d, alpha_c, skinDepth, Rs, Z0 };
+        }
+        
+        function updateCalculationSteps(freq, length, width, thickness, er, tand, result) {
+            currentCalculationElement.innerHTML = `
+                1. α<sub>d</sub> = ${result.alpha_d.toExponential(3)} Np/m<br>
+                2. α<sub>c</sub> = ${result.alpha_c.toExponential(3)} Np/m<br>
+                3. α<sub>total</sub> = ${(result.alpha_c + result.alpha_d).toExponential(3)} Np/m<br>
+                4. IL = ${result.totalLoss.toFixed(2)} dB<br>
+                5. Z<sub>0</sub> ≈ ${result.Z0.toFixed(1)} Ω
+            `;
+        }
+        
+        function initializeChart() {
+            const ctx = document.getElementById('lossChart').getContext('2d');
+            lossChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: frequencyData,
+                    datasets: [
+                        { label: '总插入损耗', data: totalLossData, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', borderWidth: 3, fill: false, tension: 0.3 },
+                        { label: '导体损耗', data: conductorLossData, borderColor: '#ef4444', borderWidth: 2, borderDash: [5, 5], fill: false, tension: 0.3 },
+                        { label: '介质损耗', data: dielectricLossData, borderColor: '#22c55e', borderWidth: 2, borderDash: [2, 2], fill: false, tension: 0.3 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: true, text: '插入损耗 vs 频率', color: '#f1f5f9', font: { size: 14 } },
+                        legend: { position: 'top', labels: { color: '#94a3b8' } }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: '频率 (GHz)', color: '#94a3b8' }, grid: { color: 'rgba(30, 41, 59, 0.5)' }, ticks: { color: '#64748b' } },
+                        y: { title: { display: true, text: '插入损耗 (dB)', color: '#94a3b8' }, grid: { color: 'rgba(30, 41, 59, 0.5)' }, ticks: { color: '#64748b' }, beginAtZero: true }
+                    }
+                }
+            });
+        }
+        
+        function generateFrequencyResponse() {
+            const length = parseFloat(lengthInput.value) / 1000;
+            const width = parseFloat(widthInput.value) / 1000;
+            const thickness = parseFloat(thicknessInput.value) / 1e6;
+            const er = parseFloat(erInput.value);
+            const tand = parseFloat(tandInput.value);
+            
+            frequencyData = []; totalLossData = []; conductorLossData = []; dielectricLossData = [];
+            
+            for (let f = 0.1; f <= 40; f += 0.5) {
+                frequencyData.push(f.toFixed(1));
+                const result = calculateInsertionLoss(f, length, width, thickness, er, tand);
+                totalLossData.push(result.totalLoss);
+                conductorLossData.push(result.conductorLoss);
+                dielectricLossData.push(result.dielectricLoss);
+            }
+            
+            if (lossChart) {
+                lossChart.data.labels = frequencyData;
+                lossChart.data.datasets[0].data = totalLossData;
+                lossChart.data.datasets[1].data = conductorLossData;
+                lossChart.data.datasets[2].data = dielectricLossData;
+                lossChart.update();
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+            updateAllValues();
+            initializeChart();
+            generateFrequencyResponse();
+        });
+    </script>
+</body>
+</html>

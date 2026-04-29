@@ -1,0 +1,15 @@
+# macOS
+.DS_Store
+._*
+
+# node_modules
+ee-tools-portal/node_modules/
+
+# IDE
+.codebuddy/
+
+# Logs
+*.log
+
+# OS
+Thumbs.db

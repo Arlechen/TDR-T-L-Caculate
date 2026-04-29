@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TDR计算 - EE Tools</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="../assets/css/common.css">
+    <style>
+        :root {
+            --bg-primary: #0a0c10;
+            --bg-secondary: #0d1117;
+            --bg-card: rgba(13, 17, 23, 0.8);
+            --border-color: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-primary: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.3);
+        }
+        
+        body {
+            background: var(--bg-primary);
+            padding-top: 64px;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .tool-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+        
+        .card-glass {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+        }
+        
+        .tool-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .tool-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #3b82f6, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .tool-subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 30px;
+        }
+        
+        @media (max-width: 900px) {
+            .main-grid { grid-template-columns: 1fr; }
+        }
+        
+        .control-card {
+            padding: 28px;
+            border-radius: var(--radius-lg);
+        }
+        
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-primary);
+        }
+        
+        .section-title svg {
+            color: var(--accent-primary);
+        }
+        
+        .mode-toggle {
+            display: flex;
+            padding: 6px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+        
+        .mode-btn {
+            flex: 1;
+            padding: 10px 16px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .mode-btn.active {
+            background: var(--accent-primary);
+            color: white;
+        }
+        
+        .unit-selector {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .unit-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+        
+        .unit-option input {
+            display: none;
+        }
+        
+        .unit-radio {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid var(--border-color);
+            transition: all 0.2s;
+        }
+        
+        .unit-option input:checked + .unit-radio {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+        
+        .unit-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        
+        select, input[type="number"] {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+        
+        select:focus, input[type="number"]:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+        
+        .stat-card {
+            padding: 24px;
+            border-radius: var(--radius-lg);
+            background: rgba(59, 130, 246, 0.05);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+        
+        .stat-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--accent-primary);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 0.875rem;
+        }
+        
+        .stat-label {
+            color: var(--text-secondary);
+        }
+        
+        .stat-value {
+            color: var(--text-primary);
+            font-weight: 500;
+            font-family: monospace;
+        }
+        
+        .workspace {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 600px) {
+            .result-grid { grid-template-columns: 1fr; }
+        }
+        
+        .io-card {
+            padding: 32px;
+            border-radius: var(--radius-lg);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .io-card.output {
+            background: rgba(59, 130, 246, 0.05);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+        
+        .io-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+        
+        .io-value {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            border: none;
+            background: transparent;
+            width: 100%;
+            outline: none;
+        }
+        
+        .io-card.output .io-value {
+            color: var(--accent-primary);
+        }
+        
+        .io-unit {
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-left: 8px;
+        }
+        
+        .formula-card {
+            padding: 32px;
+            border-radius: var(--radius-lg);
+        }
+        
+        .formula-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        
+        @media (max-width: 768px) {
+            .formula-grid { grid-template-columns: 1fr; }
+        }
+        
+        .formula-content {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+        
+        .formula-box {
+            background: var(--bg-secondary);
+            padding: 16px;
+            border-radius: 12px;
+            font-family: monospace;
+            text-align: center;
+            margin: 16px 0;
+            color: var(--accent-primary);
+            font-size: 1.1rem;
+        }
+        
+        .diagram-box {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 140px;
+        }
+        
+        .wave-container {
+            position: relative;
+            width: 100%;
+            height: 40px;
+        }
+        
+        .wave-line {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--border-color);
+            border-radius: 1px;
+        }
+        
+        .wave-pulse {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 12px;
+            height: 12px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            box-shadow: 0 0 15px var(--accent-primary);
+        }
+        
+        .pulse-labels {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 16px;
+            width: 100%;
+        }
+        
+        .pulse-label {
+            text-align: center;
+            padding: 12px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            font-size: 0.8rem;
+        }
+        
+        .pulse-label-title {
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .pulse-label-value {
+            color: var(--accent-primary);
+            font-weight: 600;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div id="nav-container"></div>
+    
+    <div class="tool-container">
+        <div class="tool-header">
+            <h1 class="tool-title">TDR传输线计算器</h1>
+            <p class="tool-subtitle">时域反射计(TDR)分析工具，计算传输线长度与反射时间关系</p>
+        </div>
+        
+        <div class="main-grid">
+            <aside class="space-y-6">
+                <section class="control-card">
+                    <h2 class="section-title">
+                        <i data-lucide="settings-2" class="w-5 h-5"></i>
+                        参数配置
+                    </h2>
+                    
+                    <div class="mb-6">
+                        <label class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 block text-center">计算模式</label>
+                        <div class="mode-toggle">
+                            <button id="mode-l-to-t" class="mode-btn active">长度 → Δt</button>
+                            <button id="mode-t-to-l" class="mode-btn">Δt → 长度</button>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 block">单位系统</label>
+                        <div class="unit-selector">
+                            <label class="unit-option">
+                                <input type="radio" name="unit" value="mm" checked>
+                                <span class="unit-radio"></span>
+                                <span class="unit-label">公制 (mm/ns)</span>
+                            </label>
+                            <label class="unit-option">
+                                <input type="radio" name="unit" value="inch">
+                                <span class="unit-radio"></span>
+                                <span class="unit-label">英制 (inch/ns)</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 block">走线结构</label>
+                        <select id="trace-type">
+                            <option value="stripline">带状线 Stripline (内层)</option>
+                            <option value="microstrip">微带线 Microstrip (表层)</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 block">介电常数 (Dk)</label>
+                        <input type="number" id="dk-value" value="4.2" step="0.1" min="1">
+                        <p id="dk-hint" class="text-xs text-slate-500 mt-2">对于带状线，等效介电常数等于材料介电常数。</p>
+                    </div>
+                </section>
+                
+                <section class="stat-card">
+                    <div class="stat-title">
+                        <i data-lucide="radio" class="w-4 h-4"></i>
+                        脉冲上升时间推荐
+                    </div>
+                    <p class="text-xs text-slate-500 mb-3">根据DUT工作频段自动推荐TDR脉冲上升时间</p>
+                    <div class="mb-4">
+                        <label class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 block">DUT工作频段 (GHz)</label>
+                        <input type="number" id="dut-frequency" value="5" step="0.1" min="0.1">
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">推荐上升时间 (Tr)</span>
+                        <span class="stat-value" id="recommended-tr">70.0 ps</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">等效带宽</span>
+                        <span class="stat-value" id="equivalent-bandwidth">5.0 GHz</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-3" style="line-height: 1.5;">
+                        <i data-lucide="info" class="w-3 h-3 inline"></i>
+                        公式: Tr ≈ 0.35 / f<sub>带宽</sub><br>
+                        更短的上升时间可检测更小的阻抗不连续性
+                    </p>
+                </section>
+                
+                <section class="stat-card">
+                    <div class="stat-title">
+                        <i data-lucide="zap" class="w-4 h-4"></i>
+                        传播常数
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">速度因子 (VF)</span>
+                        <span class="stat-value" id="stat-vf">0.488 c</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">传播速度 (Vp)</span>
+                        <span class="stat-value" id="stat-vp">146.4 mm/ns</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">单位传播延时</span>
+                        <span class="stat-value" id="stat-tpd">6.83 ps/mm</span>
+                    </div>
+                </section>
+            </aside>
+            
+            <div class="workspace">
+                <div class="result-grid">
+                    <div class="io-card card-glass">
+                        <label class="io-label" id="main-input-label">物理走线长度</label>
+                        <div style="display:flex;align-items:baseline">
+                            <input type="number" id="main-input" value="100" class="io-value">
+                            <span class="io-unit" id="main-input-unit">mm</span>
+                        </div>
+                    </div>
+                    
+                    <div class="io-card output card-glass">
+                        <label class="io-label" id="main-output-label">TDR 回路时间 (Δt)</label>
+                        <div style="display:flex;align-items:baseline">
+                            <span class="io-value" id="main-output-value">1.366</span>
+                            <span class="io-unit" id="main-output-unit">ns</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <section class="formula-card card-glass">
+                    <div class="formula-grid">
+                        <div>
+                            <h3 class="section-title">
+                                <i data-lucide="book-open" class="w-5 h-5"></i>
+                                物理原理说明
+                            </h3>
+                            <div class="formula-content">
+                                <p>TDR (时域反射计) 的原理类似于 PCB 上的"雷达"。它测量信号到达阻抗变化点并反射回来的往返时间。</p>
+                                <div class="formula-box">L = (Vp × Δt) / 2</div>
+                                <p>传播速度 (Vp) 由介质的等效相对介电常数 (ε<sub>eff</sub>) 决定：</p>
+                                <div class="formula-box">Vp = c / √ε<sub>eff</sub></div>
+                            </div>
+                        </div>
+                        <div class="diagram-box">
+                            <div class="wave-container">
+                                <div class="wave-line"></div>
+                                <div class="wave-pulse" id="wave-pulse"></div>
+                            </div>
+                            <div class="pulse-labels">
+                                <div class="pulse-label">
+                                    <div class="pulse-label-title">入射 Incident</div>
+                                    <div class="pulse-label-value">t = 0</div>
+                                </div>
+                                <div class="pulse-label">
+                                    <div class="pulse-label-title">反射 Reflected</div>
+                                    <div class="pulse-label-value" id="pulse-time">t = Δt</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="footer">
+        <div class="container">
+            <p>© 2026 EE Tools | 专注高速电路分析</p>
+        </div>
+    </footer>
+
+    <script src="../assets/js/nav.js"></script>
+    <script>
+        lucide.createIcons();
+        
+        const modeBtns = document.querySelectorAll('.mode-btn');
+        const unitRadios = document.querySelectorAll('input[name="unit"]');
+        const traceTypeSelect = document.getElementById('trace-type');
+        const dkInput = document.getElementById('dk-value');
+        const mainInput = document.getElementById('main-input');
+        const dutFrequencyInput = document.getElementById('dut-frequency');
+        const recommendedTr = document.getElementById('recommended-tr');
+        const equivalentBandwidth = document.getElementById('equivalent-bandwidth');
+        const mainInputLabel = document.getElementById('main-input-label');
+        const mainInputUnit = document.getElementById('main-input-unit');
+        const mainOutputValue = document.getElementById('main-output-value');
+        const mainOutputLabel = document.getElementById('main-output-label');
+        const mainOutputUnit = document.getElementById('main-output-unit');
+        const statVf = document.getElementById('stat-vf');
+        const statVp = document.getElementById('stat-vp');
+        const statTpd = document.getElementById('stat-tpd');
+        const dkHint = document.getElementById('dk-hint');
+        const wavePulse = document.getElementById('wave-pulse');
+        const pulseTime = document.getElementById('pulse-time');
+        
+        let currentMode = 'l-to-t';
+        let currentUnit = 'mm';
+        // 光速常数：mm/ns 和 inch/ns
+        const C_MM_NS = 299.792458;
+        const C_INCH_NS = 11.8028527;
+        
+        function calculate() {
+            const dk = parseFloat(dkInput.value) || 4.2;
+            const vf = 1 / Math.sqrt(dk);
+            // 根据单位选择光速值
+            const c = currentUnit === 'mm' ? C_MM_NS : C_INCH_NS;
+            const vp = vf * c; // 传播速度
+            
+            statVf.textContent = vf.toFixed(3) + ' c';
+            statVp.textContent = vp.toFixed(2) + ' ' + currentUnit + '/ns';
+            statTpd.textContent = (1000 / vp).toFixed(2) + ' ps/' + currentUnit;
+            
+            // 计算推荐的脉冲上升时间
+            const freq = parseFloat(dutFrequencyInput.value) || 5;
+            const trPs = (0.35 / freq) * 1000; // 转换为ps
+            recommendedTr.textContent = trPs.toFixed(1) + ' ps';
+            equivalentBandwidth.textContent = freq.toFixed(1) + ' GHz';
+            
+            const inputValue = parseFloat(mainInput.value) || 0;
+            
+            if (currentMode === 'l-to-t') {
+                // Length to Time: Δt = (2 × L) / Vp
+                const timeNs = (2 * inputValue) / vp;
+                mainOutputValue.textContent = timeNs.toFixed(3);
+                mainOutputUnit.textContent = 'ns';
+                wavePulse.style.left = Math.min(90, 10 + timeNs * 30) + '%';
+                pulseTime.textContent = 't = ' + timeNs.toFixed(3) + ' ns';
+            } else {
+                // Time to Length: L = (Vp × Δt) / 2
+                const timeNs = inputValue;
+                const length = (vp * timeNs) / 2;
+                mainOutputValue.textContent = length.toFixed(3);
+                mainOutputUnit.textContent = currentUnit;
+                wavePulse.style.left = Math.min(90, 10 + timeNs * 30) + '%';
+            }
+        }
+        
+        modeBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                modeBtns.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentMode = this.id === 'mode-l-to-t' ? 'l-to-t' : 't-to-l';
+                
+                if (currentMode === 'l-to-t') {
+                    mainInputLabel.textContent = '物理走线长度';
+                    mainInputUnit.textContent = currentUnit === 'inch' ? 'inch' : 'mm';
+                    mainOutputLabel.textContent = 'TDR 回路时间 (Δt)';
+                    mainOutputUnit.textContent = 'ns';
+                } else {
+                    mainInputLabel.textContent = 'TDR 回路时间 (Δt)';
+                    mainInputUnit.textContent = 'ns';
+                    mainOutputLabel.textContent = '物理走线长度';
+                    mainOutputUnit.textContent = currentUnit === 'inch' ? 'inch' : 'mm';
+                }
+                calculate();
+            });
+        });
+        
+        unitRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                currentUnit = this.value;
+                calculate();
+            });
+        });
+        
+        traceTypeSelect.addEventListener('change', function() {
+            dkHint.textContent = this.value === 'stripline' 
+                ? '对于带状线，等效介电常数等于材料介电常数。'
+                : '对于微带线，有效介电常数需要考虑场分布效应。';
+            calculate();
+        });
+        
+        dkInput.addEventListener('input', calculate);
+        mainInput.addEventListener('input', calculate);
+        dutFrequencyInput.addEventListener('input', calculate);
+        
+        // Initialize
+        calculate();
+        
+        // Animate wave pulse
+        let pulsePos = 10;
+        let pulseDir = 1;
+        function animatePulse() {
+            if (currentMode === 'l-to-t') {
+                pulsePos += pulseDir * 0.5;
+                if (pulsePos > 90) { pulseDir = -1; }
+                if (pulsePos < 10) { pulseDir = 1; }
+                wavePulse.style.left = pulsePos + '%';
+            }
+            requestAnimationFrame(animatePulse);
+        }
+        animatePulse();
+    </script>
+</body>
+</html>

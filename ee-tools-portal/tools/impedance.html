@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>特征阻抗计算 - EE Tools</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/common.css">
+    <style>
+        body { background: var(--bg-primary); padding-top: 64px; }
+        
+        .tool-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+        
+        .tool-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .tool-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #3b82f6, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .tool-subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        @media (max-width: 900px) {
+            .main-grid { grid-template-columns: 1fr; }
+        }
+        
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+        }
+        
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-primary);
+        }
+        
+        .card-title svg {
+            width: 24px;
+            height: 24px;
+            color: var(--accent-primary);
+        }
+        
+        .line-type-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        
+        .line-type {
+            padding: 16px 12px;
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            text-align: center;
+            transition: all var(--transition-fast);
+            background: var(--bg-secondary);
+        }
+        
+        .line-type:hover {
+            border-color: var(--accent-primary);
+            background: rgba(59, 130, 246, 0.1);
+        }
+        
+        .line-type.active {
+            border-color: var(--accent-primary);
+            background: rgba(59, 130, 246, 0.15);
+        }
+        
+        .line-type svg {
+            width: 32px;
+            height: 32px;
+            margin: 0 auto 8px;
+            color: var(--accent-primary);
+        }
+        
+        .line-type h3 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text-primary);
+        }
+        
+        .line-type p {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+        
+        .param-group {
+            margin-bottom: 16px;
+        }
+        
+        .param-group h3 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .param-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .calculate-btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            margin-top: 20px;
+        }
+        
+        .calculate-btn:hover {
+            filter: brightness(1.1);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .result-box {
+            text-align: center;
+            padding: 30px 20px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            margin-bottom: 20px;
+        }
+        
+        .result-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        .result-value {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+            margin: 10px 0;
+        }
+        
+        .result-unit {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+        }
+        
+        .result-details {
+            margin-top: 16px;
+        }
+        
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.9rem;
+        }
+        
+        .result-row:last-child { border-bottom: none; }
+        .result-row span:first-child { color: var(--text-secondary); }
+        .result-row span:last-child { color: var(--text-primary); font-weight: 500; }
+        
+        .diagram-box {
+            margin-top: 20px;
+            padding: 20px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+        }
+        
+        .diagram-box h3 {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+        
+        .diagram {
+            height: 160px;
+            background: var(--bg-card);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .formula-box {
+            margin-top: 20px;
+            padding: 16px;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: var(--radius-md);
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+        }
+        
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <div id="nav-container"></div>
+    
+    <div class="tool-container">
+        <div class="tool-header">
+            <h1 class="tool-title">PCB信号线特征阻抗计算工具</h1>
+            <p class="tool-subtitle">支持微带线、带状线、共面波导等多种传输线特征阻抗计算</p>
+        </div>
+        
+        <div class="main-grid">
+            <div class="card">
+                <h2 class="card-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M12 1v6m0 6v10M1 12h6m6 0h10"/>
+                    </svg>
+                    参数设置
+                </h2>
+                
+                <div class="line-type-selector">
+                    <div class="line-type active" id="microstrip">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M2 12h20"/>
+                            <path d="M2 8h20"/>
+                            <rect x="8" y="8" width="8" height="4" fill="currentColor" opacity="0.3"/>
+                        </svg>
+                        <h3>微带线</h3>
+                        <p>Microstrip</p>
+                    </div>
+                    <div class="line-type" id="stripline">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="4" width="20" height="16" rx="1"/>
+                            <rect x="9" y="10" width="6" height="4" fill="currentColor" opacity="0.3"/>
+                        </svg>
+                        <h3>带状线</h3>
+                        <p>Stripline</p>
+                    </div>
+                    <div class="line-type" id="coplanar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M2 14h20"/>
+                            <rect x="4" y="12" width="4" height="4" fill="currentColor" opacity="0.3"/>
+                            <rect x="10" y="12" width="4" height="4"/>
+                            <rect x="16" y="12" width="4" height="4" fill="currentColor" opacity="0.3"/>
+                        </svg>
+                        <h3>共面波导</h3>
+                        <p>CPW</p>
+                    </div>
+                </div>
+                
+                <div class="param-group">
+                    <h3>基本参数</h3>
+                    <div class="param-row">
+                        <div class="param-group">
+                            <label style="color: var(--text-secondary); font-size: 0.85rem;">线宽 (W) mm</label>
+                            <input type="number" id="traceWidth" value="0.2" min="0.01" max="5" step="0.01">
+                        </div>
+                        <div class="param-group">
+                            <label style="color: var(--text-secondary); font-size: 0.85rem;">铜厚 (T) mm</label>
+                            <input type="number" id="traceThickness" value="0.035" min="0.01" max="0.5" step="0.01">
+                        </div>
+                    </div>
+                    <div class="param-row">
+                        <div class="param-group">
+                            <label style="color: var(--text-secondary); font-size: 0.85rem;">介质厚度 (H) mm</label>
+                            <input type="number" id="dielectricHeight" value="0.2" min="0.01" max="5" step="0.01">
+                        </div>
+                        <div class="param-group">
+                            <label style="color: var(--text-secondary); font-size: 0.85rem;">介电常数 (εr)</label>
+                            <input type="number" id="dielectricConstant" value="4.3" min="1" max="10" step="0.1">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="param-group hidden" id="striplineParams">
+                    <h3>带状线特定参数</h3>
+                    <div class="param-row">
+                        <div class="param-group">
+                            <label style="color: var(--text-secondary); font-size: 0.85rem;">上层介质 (H1) mm</label>
+                            <input type="number" id="upperHeight" value="0.2" min="0.01" max="5" step="0.01">
+                        </div>
+                        <div class="param-group">
+                            <label style="color: var(--text-secondary); font-size: 0.85rem;">下层介质 (H2) mm</label>
+                            <input type="number" id="lowerHeight" value="0.2" min="0.01" max="5" step="0.01">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="param-group hidden" id="coplanarParams">
+                    <h3>共面波导特定参数</h3>
+                    <div class="param-row">
+                        <div class="param-group">
+                            <label style="color: var(--text-secondary); font-size: 0.85rem;">间隙宽度 (G) mm</label>
+                            <input type="number" id="gapWidth" value="0.15" min="0.01" max="2" step="0.01">
+                        </div>
+                        <div class="param-group">
+                            <label style="color: var(--text-secondary); font-size: 0.85rem;">接地距离 (D) mm</label>
+                            <input type="number" id="groundDistance" value="1.0" min="0.1" max="10" step="0.1">
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="calculate-btn" id="calculateBtn">计算特征阻抗</button>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                    </svg>
+                    计算结果
+                </h2>
+                
+                <div class="result-box">
+                    <p class="result-label">特征阻抗</p>
+                    <div class="result-value" id="impedanceValue">50.0</div>
+                    <p class="result-unit">Ω</p>
+                </div>
+                
+                <div class="result-details">
+                    <div class="result-row">
+                        <span>信号线类型</span>
+                        <span id="resultType">微带线</span>
+                    </div>
+                    <div class="result-row">
+                        <span>传播延迟</span>
+                        <span id="propagationDelay">5.85 ps/mm</span>
+                    </div>
+                    <div class="result-row">
+                        <span>有效介电常数</span>
+                        <span id="effectiveConstant">3.24</span>
+                    </div>
+                    <div class="result-row">
+                        <span>电容</span>
+                        <span id="capacitance">3.45 pF/cm</span>
+                    </div>
+                    <div class="result-row">
+                        <span>电感</span>
+                        <span id="inductance">8.62 nH/cm</span>
+                    </div>
+                </div>
+                
+                <div class="diagram-box">
+                    <h3>PCB结构示意图</h3>
+                    <div class="diagram" id="diagram"></div>
+                </div>
+                
+                <div class="formula-box" id="formulaText">
+                    微带线阻抗公式：Z₀ = 87/√(εᵣ+1.41) × ln(5.98H/(0.8W+T))
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="footer">
+        <div class="container">
+            <p>© 2026 EE Tools | 设计用于工程参考</p>
+        </div>
+    </footer>
+
+    <script src="../assets/js/nav.js"></script>
+    <script>
+        const lineTypes = document.querySelectorAll('.line-type');
+        const striplineParams = document.getElementById('striplineParams');
+        const coplanarParams = document.getElementById('coplanarParams');
+        const diagram = document.getElementById('diagram');
+        
+        let currentLineType = 'microstrip';
+        
+        const formulas = {
+            microstrip: '微带线：Z₀ = 87/√(εᵣ+1.41) × ln(5.98H/(0.8W+T))',
+            stripline: '对称带状线：Z₀ = 60/√(εᵣ) × ln(4H/(0.67π(0.8W+T)))',
+            coplanar: '共面波导：Z₀ = (30π/√(εₑₒₒ)) × K\'(k)/K(k)'
+        };
+        
+        lineTypes.forEach(type => {
+            type.addEventListener('click', function() {
+                lineTypes.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                currentLineType = this.id;
+                document.getElementById('resultType').textContent = this.querySelector('h3').textContent;
+                
+                striplineParams.classList.toggle('hidden', currentLineType !== 'stripline');
+                coplanarParams.classList.toggle('hidden', currentLineType !== 'coplanar');
+                document.getElementById('formulaText').textContent = formulas[currentLineType];
+                
+                drawDiagram();
+                calculateImpedance();
+            });
+        });
+        
+        function calculateImpedance() {
+            const W = parseFloat(document.getElementById('traceWidth').value);
+            const T = parseFloat(document.getElementById('traceThickness').value);
+            const H = parseFloat(document.getElementById('dielectricHeight').value);
+            const Er = parseFloat(document.getElementById('dielectricConstant').value);
+            
+            let Z0, Eeff, delay, cap, ind;
+            
+            if (currentLineType === 'microstrip') {
+                Eeff = (Er + 1) / 2 + (Er - 1) / (2 * Math.sqrt(1 + 12 * H / W));
+                Z0 = 87 / Math.sqrt(Eeff + 1.41) * Math.log(5.98 * H / (0.8 * W + T));
+            } else if (currentLineType === 'stripline') {
+                const H1 = parseFloat(document.getElementById('upperHeight').value);
+                const H2 = parseFloat(document.getElementById('lowerHeight').value);
+                const H_avg = (H1 + H2) / 2;
+                Z0 = 60 / Math.sqrt(Er) * Math.log(4 * H_avg / (0.67 * Math.PI * (0.8 * W + T)));
+                Eeff = Er;
+            } else if (currentLineType === 'coplanar') {
+                const G = parseFloat(document.getElementById('gapWidth').value);
+                const k = W / (W + 2 * G);
+                const kPrime = Math.sqrt(1 - k * k);
+                const Kk = Math.log(2 * (1 + Math.sqrt(kPrime)) / (1 - Math.sqrt(kPrime)));
+                const KkPrime = Math.log(2 * (1 + Math.sqrt(k)) / (1 - Math.sqrt(k)));
+                Eeff = 1 + (Er - 1) * KkPrime / (2 * Kk);
+                Z0 = (30 * Math.PI) / Math.sqrt(Eeff) * KkPrime / Kk;
+            }
+            
+            delay = 3.33 * Math.sqrt(Eeff);
+            cap = (1 / (Z0 * 3e8)) * 1e12 * 100;
+            ind = Z0 * 1e9 / (3e8) * 100;
+            
+            document.getElementById('impedanceValue').textContent = Z0.toFixed(1);
+            document.getElementById('propagationDelay').textContent = delay.toFixed(2) + ' ps/mm';
+            document.getElementById('effectiveConstant').textContent = Eeff.toFixed(2);
+            document.getElementById('capacitance').textContent = cap.toFixed(2) + ' pF/cm';
+            document.getElementById('inductance').textContent = ind.toFixed(2) + ' nH/cm';
+        }
+        
+        function drawDiagram() {
+            diagram.innerHTML = '';
+            const W = parseFloat(document.getElementById('traceWidth').value);
+            const H = parseFloat(document.getElementById('dielectricHeight').value);
+            const T = parseFloat(document.getElementById('traceThickness').value);
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = diagram.clientWidth;
+            canvas.height = diagram.clientHeight;
+            diagram.appendChild(canvas);
+            
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width;
+            const h = canvas.height;
+            
+            if (currentLineType === 'microstrip') {
+                ctx.fillStyle = '#CCCCCC';
+                ctx.fillRect(0, h * 0.6, w, h * 0.4);
+                ctx.fillStyle = '#3b82f6';
+                ctx.fillRect(w * 0.3, h * 0.4, Math.max(20, W * 50), Math.max(5, T * 50));
+                ctx.fillStyle = '#64748b';
+                ctx.fillRect(0, 0, w, h * 0.6);
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = '11px Inter';
+                ctx.fillText('接地平面', 10, h * 0.75);
+                ctx.fillText('介质层', 10, h * 0.35);
+                ctx.fillText(`W=${W}mm`, w * 0.35, h * 0.35);
+            } else if (currentLineType === 'stripline') {
+                ctx.fillStyle = '#64748b';
+                ctx.fillRect(0, 0, w, h * 0.35);
+                ctx.fillRect(0, h * 0.65, w, h * 0.35);
+                ctx.fillStyle = '#3b82f6';
+                ctx.fillRect(w * 0.35, h * 0.35, Math.max(20, W * 50), h * 0.3);
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = '11px Inter';
+                ctx.fillText('上层接地', 10, h * 0.2);
+                ctx.fillText('下层接地', 10, h * 0.85);
+            } else if (currentLineType === 'coplanar') {
+                const G = parseFloat(document.getElementById('gapWidth').value);
+                ctx.fillStyle = '#64748b';
+                ctx.fillRect(0, h * 0.6, w, h * 0.4);
+                ctx.fillRect(0, h * 0.4, w * 0.25, h * 0.2);
+                ctx.fillRect(w * 0.75, h * 0.4, w * 0.25, h * 0.2);
+                ctx.fillStyle = '#CCCCCC';
+                ctx.fillRect(w * 0.25, h * 0.4, Math.max(5, G * 30), h * 0.2);
+                ctx.fillRect(w * 0.6, h * 0.4, Math.max(5, G * 30), h * 0.2);
+                ctx.fillStyle = '#3b82f6';
+                ctx.fillRect(w * 0.35, h * 0.4, Math.max(15, W * 50), h * 0.2);
+            }
+        }
+        
+        document.querySelectorAll('input[type="number"]').forEach(input => {
+            input.addEventListener('input', () => { calculateImpedance(); drawDiagram(); });
+        });
+        
+        document.getElementById('calculateBtn').addEventListener('click', calculateImpedance);
+        
+        window.addEventListener('load', () => { calculateImpedance(); drawDiagram(); });
+        window.addEventListener('resize', drawDiagram);
+    </script>
+</body>
+</html>

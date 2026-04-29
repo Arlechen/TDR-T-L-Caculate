@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PCB传输线DCR计算器</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #2c3e50, #4a6491);
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .calculator-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .input-section, .result-section {
+            flex: 1;
+            min-width: 300px;
+            background-color: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title i {
+            margin-right: 10px;
+            color: #3498db;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .input-with-unit {
+            display: flex;
+        }
+        
+        input[type="number"] {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="number"]:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        
+        .unit-selector {
+            padding: 0 15px;
+            background-color: #f1f8ff;
+            border: 2px solid #ddd;
+            border-left: none;
+            border-radius: 0 5px 5px 0;
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .calculate-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        .calculate-btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .result-box {
+            background-color: #f8fafc;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            border-left: 5px solid #3498db;
+        }
+        
+        .result-title {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+        
+        .dcr-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #2c3e50;
+            text-align: center;
+            margin: 15px 0;
+        }
+        
+        .result-details {
+            margin-top: 20px;
+        }
+        
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .result-row:last-child {
+            border-bottom: none;
+        }
+        
+        .parameter-list {
+            list-style-type: none;
+            margin-top: 20px;
+        }
+        
+        .parameter-list li {
+            padding: 10px 0;
+            border-bottom: 1px dashed #eee;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .parameter-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .formula-section {
+            background-color: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 40px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        
+        .formula {
+            background-color: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.2rem;
+            margin: 15px 0;
+            text-align: center;
+            border-left: 4px solid #2ecc71;
+        }
+        
+        .explanation {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            color: #555;
+        }
+        
+        .info-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .info-box {
+            flex: 1;
+            min-width: 300px;
+            background-color: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        
+        .info-box ul {
+            padding-left: 20px;
+        }
+        
+        .info-box li {
+            margin-bottom: 10px;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 30px;
+            color: #7f8c8d;
+            border-top: 1px solid #eee;
+        }
+        
+        @media (max-width: 768px) {
+            .calculator-container {
+                flex-direction: column;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .dcr-value {
+                font-size: 2rem;
+            }
+        }
+        
+        .unit-hint {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+        
+        .material-selector {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .material-btn {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            background-color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        
+        .material-btn:hover {
+            background-color: #f1f8ff;
+        }
+        
+        .material-btn.active {
+            border-color: #3498db;
+            background-color: #e1f0fa;
+            color: #2c3e50;
+        }
+        
+        .copper-thickness {
+            display: none;
+        }
+        
+        .copper-thickness.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>PCB传输线DCR计算器</h1>
+            <p class="subtitle">计算印刷电路板(PCB)传输线的直流电阻(DCR)。输入传输线参数，选择导体材料，即可获得准确的DCR计算结果。</p>
+        </header>
+        
+        <div class="calculator-container">
+            <div class="input-section">
+                <h2 class="section-title"><i class="fas fa-sliders-h"></i> 参数设置</h2>
+                
+                <div class="input-group">
+                    <label for="length">传输线长度</label>
+                    <div class="input-with-unit">
+                        <input type="number" id="length" min="0" step="any" value="100">
+                        <div class="unit-selector">mm</div>
+                    </div>
+                    <div class="unit-hint">常用范围：10mm - 500mm</div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="width">传输线宽度</label>
+                    <div class="input-with-unit">
+                        <input type="number" id="width" min="0" step="any" value="0.5">
+                        <div class="unit-selector">mm</div>
+                    </div>
+                    <div class="unit-hint">常用范围：0.1mm - 5mm</div>
+                </div>
+                
+                <div class="input-group">
+                    <label>导体材料</label>
+                    <div class="material-selector">
+                        <button class="material-btn active" data-material="copper" data-resistivity="1.68e-8">铜 (Cu)</button>
+                        <button class="material-btn" data-material="aluminum" data-resistivity="2.82e-8">铝 (Al)</button>
+                        <button class="material-btn" data-material="gold" data-resistivity="2.44e-8">金 (Au)</button>
+                    </div>
+                </div>
+                
+                <div class="input-group copper-thickness active" id="copper-thickness-group">
+                    <label for="thickness">铜厚度 (oz)</label>
+                    <div class="input-with-unit">
+                        <input type="number" id="thickness" min="0.5" max="10" step="0.5" value="1">
+                        <div class="unit-selector">oz</div>
+                    </div>
+                    <div class="unit-hint">1 oz = 35μm (1.37 mil)</div>
+                </div>
+                
+                <div class="input-group" id="custom-resistivity-group" style="display: none;">
+                    <label for="resistivity">电阻率</label>
+                    <div class="input-with-unit">
+                        <input type="number" id="resistivity" min="0" step="any" value="1.68e-8">
+                        <div class="unit-selector">Ω·m</div>
+                    </div>
+                    <div class="unit-hint">常用值：铜 = 1.68×10⁻⁸ Ω·m</div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="temperature">环境温度</label>
+                    <div class="input-with-unit">
+                        <input type="number" id="temperature" min="-273" max="200" step="1" value="20">
+                        <div class="unit-selector">°C</div>
+                    </div>
+                    <div class="unit-hint">标准温度：20°C</div>
+                </div>
+                
+                <button class="calculate-btn" id="calculate-btn">
+                    <i class="fas fa-calculator"></i> 计算DCR
+                </button>
+            </div>
+            
+            <div class="result-section">
+                <h2 class="section-title"><i class="fas fa-chart-line"></i> 计算结果</h2>
+                
+                <div class="result-box">
+                    <div class="result-title">直流电阻 (DCR)</div>
+                    <div class="dcr-value" id="dcr-value">0.000 Ω</div>
+                    
+                    <div class="result-details">
+                        <div class="result-row">
+                            <span>每毫米电阻:</span>
+                            <span id="resistance-per-mm">0.000 Ω/mm</span>
+                        </div>
+                        <div class="result-row">
+                            <span>电压降 (1A电流):</span>
+                            <span id="voltage-drop">0.000 V</span>
+                        </div>
+                        <div class="result-row">
+                            <span>功率损耗 (1A电流):</span>
+                            <span id="power-loss">0.000 W</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="parameter-list">
+                    <div class="result-title">输入参数</div>
+                    <ul id="parameter-list">
+                        <li>长度: <span id="param-length">100 mm</span></li>
+                        <li>宽度: <span id="param-width">0.5 mm</span></li>
+                        <li>材料: <span id="param-material">铜 (Cu)</span></li>
+                        <li>厚度: <span id="param-thickness">1 oz</span></li>
+                        <li>电阻率: <span id="param-resistivity">1.68×10⁻⁸ Ω·m</span></li>
+                        <li>温度: <span id="param-temperature">20 °C</span></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="formula-section">
+            <h2 class="section-title"><i class="fas fa-square-root-alt"></i> 计算公式</h2>
+            <div class="formula">
+                R = ρ × L / (W × T)
+            </div>
+            <div class="explanation">
+                <p><strong>公式解释:</strong></p>
+                <p><strong>R</strong> = 直流电阻 (Ω)</p>
+                <p><strong>ρ</strong> = 导体材料的电阻率 (Ω·m)</p>
+                <p><strong>L</strong> = 传输线长度 (m)</p>
+                <p><strong>W</strong> = 传输线宽度 (m)</p>
+                <p><strong>T</strong> = 传输线厚度 (m)</p>
+                <p>注意：所有长度单位需要转换为米(m)进行计算。</p>
+            </div>
+        </div>
+        
+        <div class="info-section">
+            <div class="info-box">
+                <h2 class="section-title"><i class="fas fa-info-circle"></i> DCR计算说明</h2>
+                <p>直流电阻(DCR)是PCB传输线在直流电流下的电阻值，直接影响电路的功耗和电压降。</p>
+                <p><strong>影响DCR的因素:</strong></p>
+                <ul>
+                    <li><strong>材料电阻率</strong>: 不同导体材料有不同的电阻率</li>
+                    <li><strong>几何尺寸</strong>: 长度、宽度和厚度决定导体的横截面积</li>
+                    <li><strong>温度</strong>: 温度升高会导致电阻增加</li>
+                    <li><strong>铜厚度</strong>: PCB通常使用盎司(oz)表示铜厚，1oz = 35μm</li>
+                </ul>
+            </div>
+            
+            <div class="info-box">
+                <h2 class="section-title"><i class="fas fa-lightbulb"></i> 使用建议</h2>
+                <ul>
+                    <li>对于大电流应用，应选择较宽、较厚的传输线以降低DCR</li>
+                    <li>高精度模拟电路对DCR敏感，需要仔细计算</li>
+                    <li>电源线路应考虑DCR引起的电压降和功耗</li>
+                    <li>多层PCB可通过并联层来降低整体DCR</li>
+                    <li>高温环境下应用需考虑电阻的温度系数</li>
+                </ul>
+            </div>
+        </div>
+        
+        <footer>
+            <p>PCB传输线DCR计算器 &copy; 2023 | 用于PCB设计和电气计算</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取DOM元素
+            const lengthInput = document.getElementById('length');
+            const widthInput = document.getElementById('width');
+            const thicknessInput = document.getElementById('thickness');
+            const resistivityInput = document.getElementById('resistivity');
+            const temperatureInput = document.getElementById('temperature');
+            const calculateBtn = document.getElementById('calculate-btn');
+            const dcrValue = document.getElementById('dcr-value');
+            const resistancePerMm = document.getElementById('resistance-per-mm');
+            const voltageDrop = document.getElementById('voltage-drop');
+            const powerLoss = document.getElementById('power-loss');
+            
+            // 参数显示元素
+            const paramLength = document.getElementById('param-length');
+            const paramWidth = document.getElementById('param-width');
+            const paramMaterial = document.getElementById('param-material');
+            const paramThickness = document.getElementById('param-thickness');
+            const paramResistivity = document.getElementById('param-resistivity');
+            const paramTemperature = document.getElementById('param-temperature');
+            
+            // 材料选择按钮
+            const materialButtons = document.querySelectorAll('.material-btn');
+            const copperThicknessGroup = document.getElementById('copper-thickness-group');
+            const customResistivityGroup = document.getElementById('custom-resistivity-group');
+            
+            // 当前选择的材料
+            let currentMaterial = 'copper';
+            let currentResistivity = 1.68e-8;
+            
+            // 温度系数 (每°C)
+            const temperatureCoefficient = {
+                'copper': 0.00393,
+                'aluminum': 0.00403,
+                'gold': 0.00340
+            };
+            
+            // 材料名称映射
+            const materialNames = {
+                'copper': '铜 (Cu)',
+                'aluminum': '铝 (Al)',
+                'gold': '金 (Au)'
+            };
+            
+            // 盎司到米的转换因子 (1 oz = 35 μm = 35e-6 m)
+            const ozToMeter = 35e-6;
+            
+            // 材料选择事件处理
+            materialButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // 移除所有按钮的active类
+                    materialButtons.forEach(btn => btn.classList.remove('active'));
+                    // 为当前按钮添加active类
+                    this.classList.add('active');
+                    
+                    // 更新当前材料
+                    currentMaterial = this.getAttribute('data-material');
+                    currentResistivity = parseFloat(this.getAttribute('data-resistivity'));
+                    
+                    // 更新电阻率输入框的值
+                    resistivityInput.value = currentResistivity;
+                    
+                    // 更新材料名称显示
+                    paramMaterial.textContent = materialNames[currentMaterial];
+                    
+                    // 显示/隐藏铜厚度输入
+                    if (currentMaterial === 'copper') {
+                        copperThicknessGroup.classList.add('active');
+                        customResistivityGroup.style.display = 'none';
+                        paramThickness.textContent = thicknessInput.value + ' oz';
+                    } else {
+                        copperThicknessGroup.classList.remove('active');
+                        customResistivityGroup.style.display = 'block';
+                        paramThickness.textContent = (ozToMeter * 1e6).toFixed(1) + ' μm';
+                    }
+                    
+                    // 重新计算
+                    calculateDCR();
+                });
+            });
+            
+            // 计算DCR函数
+            function calculateDCR() {
+                // 获取输入值
+                const length = parseFloat(lengthInput.value); // mm
+                const width = parseFloat(widthInput.value); // mm
+                const thicknessOz = parseFloat(thicknessInput.value); // oz
+                const resistivity = parseFloat(resistivityInput.value); // Ω·m
+                const temperature = parseFloat(temperatureInput.value); // °C
+                
+                // 更新参数显示
+                paramLength.textContent = length + ' mm';
+                paramWidth.textContent = width + ' mm';
+                paramMaterial.textContent = materialNames[currentMaterial];
+                paramTemperature.textContent = temperature + ' °C';
+                
+                if (currentMaterial === 'copper') {
+                    paramThickness.textContent = thicknessOz + ' oz';
+                } else {
+                    paramThickness.textContent = (ozToMeter * 1e6).toFixed(1) + ' μm';
+                }
+                
+                // 使用科学记数法显示电阻率
+                paramResistivity.textContent = resistivity.toExponential(2) + ' Ω·m';
+                
+                // 转换单位：从mm和oz到米
+                const lengthM = length / 1000; // mm 到 m
+                const widthM = width / 1000; // mm 到 m
+                const thicknessM = thicknessOz * ozToMeter; // oz 到 m
+                
+                // 计算横截面积
+                const crossSectionalArea = widthM * thicknessM; // m²
+                
+                // 基础DCR计算 (在20°C时)
+                let dcr = resistivity * lengthM / crossSectionalArea; // Ω
+                
+                // 温度校正 (相对于20°C)
+                if (temperature !== 20) {
+                    const alpha = temperatureCoefficient[currentMaterial];
+                    dcr = dcr * (1 + alpha * (temperature - 20));
+                }
+                
+                // 更新结果显示
+                if (dcr < 0.001) {
+                    dcrValue.textContent = (dcr * 1000).toFixed(4) + ' mΩ';
+                } else if (dcr < 1) {
+                    dcrValue.textContent = dcr.toFixed(4) + ' Ω';
+                } else {
+                    dcrValue.textContent = dcr.toFixed(4) + ' Ω';
+                }
+                
+                // 计算每毫米电阻
+                const resistancePerMmValue = dcr / length; // Ω/mm
+                resistancePerMm.textContent = resistancePerMmValue.toExponential(4) + ' Ω/mm';
+                
+                // 计算1A电流下的电压降
+                const voltageDropValue = dcr * 1; // V (对于1A电流)
+                voltageDrop.textContent = voltageDropValue.toExponential(4) + ' V';
+                
+                // 计算1A电流下的功率损耗
+                const powerLossValue = dcr * 1 * 1; // W (对于1A电流)
+                powerLoss.textContent = powerLossValue.toExponential(4) + ' W';
+            }
+            
+            // 为所有输入添加事件监听器
+            const inputs = [lengthInput, widthInput, thicknessInput, resistivityInput, temperatureInput];
+            inputs.forEach(input => {
+                input.addEventListener('input', calculateDCR);
+            });
+            
+            // 计算按钮点击事件
+            calculateBtn.addEventListener('click', calculateDCR);
+            
+            // 页面加载时计算一次
+            calculateDCR();
+        });
+    </script>
+</body>
+</html>

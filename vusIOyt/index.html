@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TDR 工程师专业版 | 传输线长度计算器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-[#0a0c10] text-slate-200 min-h-screen font-sans antialiased text-[15px]">
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-[#0d1117]/80 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-blue-600/20 rounded-lg">
+                    <i data-lucide="activity" class="text-blue-500 w-6 h-6"></i>
+                </div>
+                <h1 class="text-xl font-bold tracking-tight text-white">TDR <span class="text-blue-500">工程师专业版</span></h1>
+            </div>
+            <div class="flex items-center gap-4 text-sm text-slate-400">
+                <span class="flex items-center gap-1"><i data-lucide="cpu" class="w-4 h-4"></i> 信号完整性</span>
+                <span class="h-4 w-px bg-slate-700"></span>
+                <span id="current-date" class="hidden md:inline">2026-03-26</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <!-- Sidebar / Controls -->
+        <aside class="lg:col-span-4 space-y-6">
+            <section class="card-glass p-6 rounded-2xl border border-slate-800">
+                <h2 class="text-lg font-semibold mb-6 flex items-center gap-2">
+                    <i data-lucide="settings-2" class="w-5 h-5 text-blue-400"></i>
+                    参数配置
+                </h2>
+                
+                <div class="space-y-6">
+                    <!-- Mode Toggle -->
+                    <div>
+                        <label class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 block text-center">计算模式</label>
+                        <div class="flex items-center justify-between p-1.5 bg-slate-900 rounded-xl border border-slate-800">
+                            <button id="mode-l-to-t" class="mode-btn active flex-1">长度 → Δt</button>
+                            <div class="w-px h-6 bg-slate-700 mx-1"></div> <!-- Separation Divider -->
+                            <button id="mode-t-to-l" class="mode-btn flex-1">Δt → 长度</button>
+                        </div>
+                    </div>
+
+                    <!-- Unit Toggle -->
+                    <div>
+                        <label class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 block">单位系统</label>
+                        <div class="flex items-center gap-6">
+                            <label class="flex items-center gap-2 cursor-pointer group">
+                                <input type="radio" name="unit" value="mm" checked class="hidden peer">
+                                <div class="w-4 h-4 rounded-full border-2 border-slate-600 peer-checked:border-blue-500 peer-checked:bg-blue-500 transition-all"></div>
+                                <span class="text-sm group-hover:text-blue-400 transition-colors">公制 (mm/ns)</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer group">
+                                <input type="radio" name="unit" value="inch" class="hidden peer">
+                                <div class="w-4 h-4 rounded-full border-2 border-slate-600 peer-checked:border-blue-500 peer-checked:bg-blue-500 transition-all"></div>
+                                <span class="text-sm group-hover:text-blue-400 transition-colors">英制 (inch/ns)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Structure Type -->
+                    <div>
+                        <label class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 block">走线结构</label>
+                        <select id="trace-type" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none cursor-pointer">
+                            <option value="stripline">带状线 Stripline (内层)</option>
+                            <option value="microstrip">微带线 Microstrip (表层)</option>
+                        </select>
+                    </div>
+
+                    <!-- Dielectric Constant -->
+                    <div>
+                        <label id="dk-label" class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 block">介电常数 (Dk)</label>
+                        <div class="relative">
+                            <input type="number" id="dk-value" value="4.2" step="0.1" min="1" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                            <span class="absolute right-4 top-2.5 text-slate-500 text-xs italic">ε<sub>r</sub></span>
+                        </div>
+                        <p id="dk-hint" class="text-[11px] text-slate-500 mt-2 leading-relaxed">对于带状线，等效介电常数等于材料介电常数。</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Quick Specs -->
+            <section class="card-glass p-6 rounded-2xl border border-slate-800 bg-blue-500/5">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-blue-400 mb-4 flex items-center gap-2">
+                    <i data-lucide="zap" class="w-4 h-4"></i> 传播常数
+                </h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-slate-400">速度因子 (VF)</span>
+                        <span id="stat-vf" class="font-mono text-white">0.488 c</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-slate-400">传播速度 (Vp)</span>
+                        <span id="stat-vp" class="font-mono text-white">146.4 mm/ns</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-slate-400">单位传播延时</span>
+                        <span id="stat-tpd" class="font-mono text-white">6.83 ps/mm</span>
+                    </div>
+                </div>
+            </section>
+        </aside>
+
+        <!-- Main Workspace -->
+        <div class="lg:col-span-8 space-y-8">
+            <!-- Results Dashboard -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Input Card -->
+                <div class="card-glass p-8 rounded-3xl border border-slate-800 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <i data-lucide="text-cursor-input" class="w-16 h-16"></i>
+                    </div>
+                    <label id="main-input-label" class="text-sm font-medium text-slate-400 mb-2 block">物理走线长度</label>
+                    <div class="flex items-baseline gap-3">
+                        <input type="number" id="main-input" value="100" class="bg-transparent text-5xl font-bold text-white outline-none w-full border-b-2 border-transparent focus:border-blue-600 transition-all" placeholder="0.00">
+                        <span id="main-input-unit" class="text-2xl font-medium text-slate-500">mm</span>
+                    </div>
+                    <div class="mt-4 flex items-center gap-2 text-xs text-slate-500">
+                        <i data-lucide="info" class="w-3 h-3"></i>
+                        <span>输入已知的物理尺寸或时间值</span>
+                    </div>
+                </div>
+
+                <!-- Output Card -->
+                <div class="card-glass p-8 rounded-3xl border border-blue-900/30 bg-blue-600/5 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-4 opacity-10">
+                        <i data-lucide="timer" class="w-16 h-16 text-blue-400"></i>
+                    </div>
+                    <label id="main-output-label" class="text-sm font-medium text-blue-400/80 mb-2 block">TDR 回路时间 (Δt)</label>
+                    <div class="flex items-baseline gap-3">
+                        <span id="main-output-value" class="text-5xl font-bold text-blue-500">1.366</span>
+                        <span id="main-output-unit" class="text-2xl font-medium text-blue-800">ns</span>
+                    </div>
+                    <div class="mt-4 flex items-center gap-2 text-xs text-blue-400/60">
+                        <i data-lucide="check-circle-2" class="w-3 h-3"></i>
+                        <span>实时计算结果</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visualization / Formula Section -->
+            <section class="card-glass p-8 rounded-3xl border border-slate-800">
+                <div class="flex flex-col md:flex-row gap-8">
+                    <div class="flex-1 space-y-4">
+                        <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+                            <i data-lucide="book-open" class="w-5 h-5 text-blue-400"></i>
+                            物理原理说明
+                        </h3>
+                        <div class="prose prose-invert prose-sm max-w-none text-slate-400">
+                            <p>TDR (时域反射计) 的原理类似于 PCB 上的“雷达”。它测量信号到达阻抗变化点并反射回来的往返时间。</p>
+                            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-800 font-mono text-center my-4">
+                                <p class="text-blue-400 text-lg">L = (V<sub>p</sub> × Δt) / 2</p>
+                                <p class="text-slate-500 text-[10px] mt-1 tracking-widest font-sans">Δt 为往返回路时间</p>
+                            </div>
+                            <p>传播速度 (V<sub>p</sub>) 由介质的等效相对介电常数 (ε<sub>eff</sub>) 决定：</p>
+                            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-800 font-mono text-center my-4">
+                                <p class="text-blue-400 text-lg">V<sub>p</sub> = c / √ε<sub>eff</sub></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex-1 bg-slate-900/30 rounded-2xl border border-slate-800 p-6 flex flex-col justify-center">
+                        <div class="relative h-32 w-full flex items-center justify-center">
+                            <!-- Visual Diagram Mockup -->
+                            <div class="absolute inset-0 flex items-center px-4">
+                                <div class="h-1 w-full bg-slate-800 rounded-full"></div>
+                                <div id="wave-pulse" class="absolute h-3 w-3 bg-blue-500 rounded-full shadow-[0_0_10px_#3b82f6]"></div>
+                            </div>
+                            <div class="absolute left-4 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-blue-500 rounded-full"></div>
+                            <div class="absolute right-4 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-slate-600 rounded-full"></div>
+                            <div class="absolute bottom-4 left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-widest text-slate-500">传输线仿真模型</div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 mt-4">
+                            <div class="text-center p-2 rounded-lg bg-slate-800/50">
+                                <div class="text-[10px] text-slate-500 uppercase">入射 Incident</div>
+                                <div class="text-xs text-blue-400 font-bold">t = 0</div>
+                            </div>
+                            <div class="text-center p-2 rounded-lg bg-slate-800/50">
+                                <div class="text-[10px] text-slate-500 uppercase">反射 Reflected</div>
+                                <div class="text-xs text-blue-400 font-bold">t = Δt</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="max-w-7xl mx-auto px-4 py-12 border-t border-slate-900 text-center text-slate-600 text-xs">
+        <p>© 2026 信号完整性工程实验室 | 专注高速电路分析</p>
+    </footer>
+
+    <script type="module" src="calculator.js"></script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+    --bg-color: #0a0c10;
+    --card-bg: rgba(13, 17, 23, 0.7);
+    --tech-blue: #3b82f6;
+    --tech-cyan: #06b6d4;
+}
+
+body {
+    font-family: 'Inter', -apple-system, sans-serif;
+}
+
+.card-glass {
+    background: var(--card-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+.mode-btn {
+    @apply py-2 px-4 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400;
+}
+
+.mode-btn.active {
+    @apply bg-blue-600 text-white shadow-lg shadow-blue-900/20;
+}
+
+/* Hide spin buttons in number inputs */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type=number] {
+    -moz-appearance: textfield;
+}
+
+/* Animation for the wave mockup */
+#wave-pulse {
+    animation: ping-pong 3s ease-in-out infinite;
+}
+
+@keyframes ping-pong {
+    0% { left: 0%; opacity: 0; transform: scale(0.5); }
+    10% { opacity: 1; transform: scale(1); }
+    45% { left: 98%; opacity: 1; }
+    50% { left: 100%; opacity: 0.5; }
+    55% { left: 98%; opacity: 1; }
+    90% { left: 2%; opacity: 1; transform: scale(1); }
+    100% { left: 0%; opacity: 0; transform: scale(0.5); }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #1e293b;
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #334155;
+}
